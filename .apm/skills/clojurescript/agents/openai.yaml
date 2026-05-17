@@ -1,0 +1,8 @@
+interface:
+  display_name: "ClojureScript"
+  short_description: "ClojureScript-specific: JavaScript interop, externs inference, macro stage separation, host-typed exceptions, and the cljs.main workflow."
+  default_prompt: "Review this ClojureScript code for idiomatic JavaScript interop, externs hygiene, and host-specific concerns."
+  brand_color: "#F7DF1E"
+
+policy:
+  allow_implicit_invocation: true

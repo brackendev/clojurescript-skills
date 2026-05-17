@@ -1,0 +1,8 @@
+interface:
+  display_name: "ClojureScript Lenses"
+  short_description: "Translate code-lenses philosophies into ClojureScript-specific patterns. Defaults: grug, Honest Code, Tidy First, Parse Don't Validate; APOSD and Legacy Code are opt-in."
+  default_prompt: "Apply the relevant code-lenses translation to this ClojureScript code."
+  brand_color: "#F7DF1E"
+
+policy:
+  allow_implicit_invocation: true

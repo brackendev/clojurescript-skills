@@ -1,0 +1,8 @@
+interface:
+  display_name: "Scaffold a ClojureScript Project"
+  short_description: "Scaffold a new ClojureScript project with deps.edn and cljs.main."
+  default_prompt: "Scaffold a new ClojureScript project."
+  brand_color: "#F7DF1E"
+
+policy:
+  allow_implicit_invocation: false

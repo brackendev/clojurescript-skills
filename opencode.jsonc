@@ -1,0 +1,13 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "permission": {
+    "skill": {
+      "clojurescript": "allow",
+      "clojurescript-lenses": "allow",
+      "cljs-new": "allow",
+      "cljs-check": "allow",
+      "cljs-upgrade": "allow",
+      "cljs-smells-review": "allow"
+    }
+  }
+}
