@@ -1,0 +1,8 @@
+interface:
+  display_name: "ClojureScript Tidy"
+  short_description: "Tidy a ClojureScript project (lint, format, test, advanced, dry). The format step writes by default; --report swaps it for cljfmt check."
+  default_prompt: "Tidy this ClojureScript project."
+  brand_color: "#F7DF1E"
+
+policy:
+  allow_implicit_invocation: false

@@ -12,6 +12,7 @@ For people working on the plugin source. End-user install instructions live in [
 | `opencode.jsonc`, `.opencode/package.json` | Local OpenCode configuration. |
 | `README.md` | End-user documentation. |
 | `CHANGELOG.md` | User-facing changes per version. |
+| `CONVENTIONS.md` | Argument grammar, scope vocabulary, and mutation defaults that every user-invocable skill follows. |
 | `CLAUDE.md`, `TODO.md` | Local working notes. Gitignored globally; never committed. |
 
 ## APM lockfile rule
@@ -20,7 +21,7 @@ Do not add `.claude-plugin/`, `.codex-plugin/`, `.agents/plugins/marketplace.jso
 
 ## Adding or modifying a skill
 
-1. Edit `.apm/skills/<name>/SKILL.md`.
+1. Edit `.apm/skills/<name>/SKILL.md`. For user-invocable skills with an argument surface, follow [CONVENTIONS.md](CONVENTIONS.md) (argument grammar, scope vocabulary, mutation defaults).
 2. Mirror the change to `.opencode/skills/<name>/SKILL.md` (byte-identical).
 3. Update `README.md` if the change is user-facing.
 4. Add a `CHANGELOG.md` entry under `[Unreleased]` for user-facing changes.

@@ -1,7 +1,7 @@
 ---
 name: cljs-smells-review
-description: Review ClojureScript code against ClojureScript-specific smells (placeholder, see TODO)
-argument-hint: "[scope or options...]"
+description: Review ClojureScript code against ClojureScript-specific smells; pure report, never writes (placeholder, see TODO)
+argument-hint: "[path|all]"
 allowed-tools: Bash, Read, Grep, Glob
 user-invocable: true
 disable-model-invocation: true
@@ -9,7 +9,29 @@ disable-model-invocation: true
 
 # ClojureScript Smells Review (Placeholder)
 
-This skill is a placeholder. ClojureScript-specific code review against a curated smells catalog is planned but not yet implemented. Running `/cljs-smells-review` today shows this notice and exits.
+This skill is a placeholder. ClojureScript-specific code review against a curated smells catalog is planned but not yet implemented. Running `/cljs-smells-review` today shows this notice and exits. The argument grammar and pure-report classification land now so the eventual implementation has a contract to honor. See `CONVENTIONS.md` in the repo root for the standard.
+
+## Arguments
+
+| Input              | Target                                                                       |
+|--------------------|------------------------------------------------------------------------------|
+| (no argument)      | Review changed files only (staged + unstaged)                                |
+| `all`              | Review the full codebase, sampling high-risk and high-traffic namespaces     |
+| `path/to/dir`      | Review files under directory                                                 |
+| `path/to/file.cljs`| Review specific file                                                         |
+
+Examples:
+
+```
+/cljs-smells-review
+/cljs-smells-review src/my_app
+/cljs-smells-review src/my_app/core.cljs
+/cljs-smells-review all
+```
+
+This skill is pure-report: it never writes. Operators apply suggestions themselves. No `--report` flag, because there is nothing to invert.
+
+When (no argument) is invoked outside a git worktree, the eventual implementation will ask the operator what to review rather than widening silently to `all`.
 
 ## Status
 
@@ -42,7 +64,7 @@ cljs-smells-review is not yet implemented.
 
 A ClojureScript-specific smells catalog is in development. For now:
   - Run /clj-smells-review from clojure-skills for host-neutral smells in .cljs files.
-  - Use /cljs-check for lint, format, test, advanced-compilation, and duplicate-form checks.
+  - Use /cljs-tidy for lint, format, test, advanced-compilation, and duplicate-form checks.
   - The clojurescript skill (auto-invoked) covers idiomatic ClojureScript style and JS interop.
 
 To track progress, see TODO.md in the clojurescript-skills repo.

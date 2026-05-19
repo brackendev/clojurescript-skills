@@ -1,29 +1,41 @@
 ---
-name: cljs-check
-description: Run the ClojureScript quality pipeline (lint, format, test, advanced, dry)
-argument-hint: "[lint|format|test|advanced|dry]"
+name: cljs-tidy
+description: Tidy a ClojureScript project (lint, format, test, advanced, dry); format writes by default
+argument-hint: "[lint|format|test|advanced|dry] [--report] [all]"
 user-invocable: true
 disable-model-invocation: true
 ---
 
-# ClojureScript Quality Check
+# ClojureScript Tidy
 
-Run lint, format, test, advanced-compilation, and duplicate-form checks on ClojureScript source files.
+Run lint, format, test, advanced-compilation, and duplicate-form checks on ClojureScript source files. The `format` step writes by default; `lint`, `test`, `advanced`, and `dry` are pure-read of source. See `CONVENTIONS.md` in the repo root for the argument grammar this skill follows.
+
+## Arguments
+
+| Input             | Target                                                                       |
+|-------------------|------------------------------------------------------------------------------|
+| (no argument)     | Run all five steps (`lint`, `format`, `test`, `advanced`, `dry`) on the project (src, test) |
+| `all`             | Same as (no argument); accepted for family consistency                       |
+| `lint`            | Run lint only                                                                |
+| `format`          | Run format only                                                              |
+| `test`            | Run tests only                                                               |
+| `advanced`        | Run advanced-compilation sanity check only                                   |
+| `dry`             | Run dry only                                                                 |
+| `--report`        | Replace `cljfmt fix` with non-writing `cljfmt check` in the format step      |
+
+Step keywords are combinable (for example, `/cljs-tidy lint test dry`). The `--report` flag may appear in any position. When `--report` is present without an explicit step keyword, every step still runs; only the format step's behavior changes.
+
+The step keyword `dry` is the dry4clj duplicate-form scan, not a dry-run mode. Only the literal `--report` token disables writes.
+
+## Mutation
+
+Only the `format` step writes source. It runs `clj -M:cljfmt fix` by default, rewriting `.cljs` and `.cljc` files in place. With `--report`, the step runs `clj -M:cljfmt check`, which exits non-zero when files would change but does not write.
+
+The `advanced` step writes generated JavaScript under `out/` (or the project's compiler `:output-dir`), which is a build artifact, not source. The `lint`, `test`, and `dry` steps are pure-read regardless of `--report`.
 
 ## Steps
 
-Parse `$ARGUMENTS` to determine which steps to run. If empty, run all steps in order.
-
-| Argument | Steps |
-|----------|-------|
-| (empty) | lint, format, test, advanced, dry |
-| `lint` | lint only |
-| `format` | format only |
-| `test` | test only |
-| `advanced` | advanced only |
-| `dry` | dry only |
-
-Multiple arguments can be combined (e.g., `lint test dry`).
+Parse `$ARGUMENTS` to determine which steps to run and whether `--report` is present. If no step keyword is supplied (or only `all` is supplied), run every step in order.
 
 ### 1. Lint
 
@@ -39,13 +51,19 @@ Report pass if exit code is 0 and there are no errors. Show the clj-kondo output
 
 ### 2. Format
 
-Run cljfmt to fix formatting. cljfmt covers `.cljs` and `.cljc` along with `.clj`:
+Without `--report`, run cljfmt to fix formatting. cljfmt covers `.cljs` and `.cljc` along with `.clj`:
 
 ```bash
 clj -M:cljfmt fix
 ```
 
-Report pass if exit code is 0, fail otherwise. Show any formatting changes.
+With `--report`, run cljfmt in check mode (no writes):
+
+```bash
+clj -M:cljfmt check
+```
+
+Report pass if exit code is 0, fail otherwise. Show any formatting changes (under `fix`) or the diff (under `check`).
 
 ### 3. Test
 
@@ -106,7 +124,7 @@ Upstream dry4clj scans `.clj`, `.cljc`, and `.cljs` files by default, so the Clo
 After running all requested steps, print a summary:
 
 ```
-ClojureScript Check Results:
+ClojureScript Tidy Results:
   Lint:     PASS/FAIL/SKIPPED
   Format:   PASS/FAIL/SKIPPED
   Test:     PASS/FAIL/SKIPPED
@@ -114,7 +132,7 @@ ClojureScript Check Results:
   Dry:      PASS/FAIL/SKIPPED
 ```
 
-If any step fails, stop and report the failure. Do not continue to subsequent steps.
+If `--report` was passed, append `(report mode: format checked, not written)` after the summary. If any step fails, stop and report the failure. Do not continue to subsequent steps.
 
 ## Gotchas
 

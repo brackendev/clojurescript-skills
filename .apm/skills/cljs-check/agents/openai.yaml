@@ -1,8 +1,0 @@
-interface:
-  display_name: "ClojureScript Quality Check"
-  short_description: "Run the ClojureScript quality pipeline (lint, format, test, advanced, dry)."
-  default_prompt: "Run the ClojureScript quality pipeline."
-  brand_color: "#F7DF1E"
-
-policy:
-  allow_implicit_invocation: false

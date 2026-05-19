@@ -5,7 +5,7 @@
       "clojurescript": "allow",
       "clojurescript-lenses": "allow",
       "cljs-new": "allow",
-      "cljs-check": "allow",
+      "cljs-tidy": "allow",
       "cljs-upgrade": "allow",
       "cljs-smells-review": "allow"
     }

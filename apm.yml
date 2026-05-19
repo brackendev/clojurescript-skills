@@ -1,5 +1,5 @@
 name: clojurescript-skills
-version: 0.1.0
+version: 0.1.1
 description: ClojureScript toolkit covering JavaScript interop, externs inference, macro stage separation, host-typed exception handling, JS-flavored numbers and truthiness, the cljs.main project workflow, code-lenses translation, scaffolding, quality checks, upgrades, and a smells-review placeholder. Layers on top of clojure-skills.
 author: Bracken Spencer
 license: MIT

@@ -8,7 +8,20 @@ disable-model-invocation: true
 
 # Scaffold a ClojureScript Project
 
-Create a new ClojureScript project that uses [`cljs.main`](https://clojurescript.org/guides/quick-start) as its build and REPL entry point. The scaffold follows the official ClojureScript Quick Start layout and adds an `:test` alias, a `:cljfmt` alias, and clj-kondo configuration.
+Create a new ClojureScript project that uses [`cljs.main`](https://clojurescript.org/guides/quick-start) as its build and REPL entry point. The scaffold follows the official ClojureScript Quick Start layout and adds an `:test` alias, a `:cljfmt` alias, and clj-kondo configuration. See `CONVENTIONS.md` in the repo root for the argument grammar this skill follows.
+
+## Arguments
+
+| Input             | Target                                                                       |
+|-------------------|------------------------------------------------------------------------------|
+| `<project-name>`  | Required. Use hyphens (for example, `hello-world`); the skill maps to underscores for file paths (`hello_world/`) and keeps hyphens in namespace symbols (`hello-world.core`). |
+| (no argument)     | Prompt the operator for a project name.                                      |
+
+This skill is exempt from the `all` and `<path>` rows of the standard scope vocabulary because scaffolding has no useful default scope. See `CONVENTIONS.md` for the standard.
+
+## Mutation
+
+Mutates by default: creates the project directory and writes `deps.edn`, the entry-point source file `src/<project_name>/core.cljs`, the test source and test-runner files under `test/<project_name>/`, `resources/public/index.html`, `.cljfmt.edn`, `.gitignore`, and `.clj-kondo/config.edn` (plus the upstream clj-kondo exports under `.clj-kondo/imports/`). No `--report` flag; preview the side effects by reading this `SKILL.md`.
 
 ## Prerequisites
 
@@ -32,7 +45,7 @@ java -version
 
 Use `$ARGUMENTS` as the project name. If empty, ask the user for a project name.
 
-The project name should use hyphens (e.g., `hello-world`). File paths use underscores (e.g., `hello_world/`). The namespace mirrors the project name (`hello-world.core`).
+The project name uses hyphens (for example, `hello-world`). File paths use underscores (for example, `hello_world/`). The namespace mirrors the project name (`hello-world.core`).
 
 ### 2. Resolve the Latest ClojureScript Version
 

@@ -42,7 +42,7 @@ Update later with `apm update [-g]`. Remove with `apm uninstall brackendev/cloju
 - A ClojureScript toolchain. The reference workflow uses the official [`cljs.main`](https://clojurescript.org/guides/quick-start) entry point via the [Clojure CLI](https://clojure.org/guides/install_clojure) (Java 17 or higher). [shadow-cljs](https://github.com/thheller/shadow-cljs) and [figwheel-main](https://github.com/bhauman/figwheel-main) are common community alternatives and are referenced where relevant.
 - [clojure-skills](https://github.com/brackendev/clojure-skills) installed alongside, for the host-neutral baseline.
 - [clj-kondo](https://github.com/clj-kondo/clj-kondo) for the lint steps in the user-invoked skills below.
-- The `cljs-check` dry step requires a [dry4clj](https://github.com/unclebob/dry4clj) `:dry4clj` alias in `deps.edn`.
+- The `cljs-tidy` dry step requires a [dry4clj](https://github.com/unclebob/dry4clj) `:dry4clj` alias in `deps.edn`.
 
 ## Skills
 
@@ -56,27 +56,29 @@ Scaffold a new ClojureScript project with `deps.edn`, browser entry point, Node-
 /cljs-new hello-world
 ```
 
-#### `/cljs-check [lint|format|test|advanced|dry]`
+#### `/cljs-tidy [lint|format|test|advanced|dry] [--report] [all]`
 
-Run the ClojureScript quality pipeline. Defaults to the full sequence (lint, format, test, advanced, dry). Each step is also addressable on its own. The `advanced` step runs the project under `:advanced` optimizations as a production-build sanity check and surfaces externs-inference failures.
+Tidy a ClojureScript project. Defaults to the full sequence (lint, format, test, advanced, dry). Each step is also addressable on its own. The `format` step writes by default (`cljfmt fix`); pass `--report` to swap it for non-writing `cljfmt check`. The `advanced` step runs the project under `:advanced` optimizations as a production-build sanity check and surfaces externs-inference failures. See [CONVENTIONS.md](CONVENTIONS.md) for the argument grammar this skill follows.
 
 ```bash
-/cljs-check
-/cljs-check lint
-/cljs-check advanced
+/cljs-tidy
+/cljs-tidy lint
+/cljs-tidy advanced
+/cljs-tidy --report
 ```
 
-#### `/cljs-upgrade`
+#### `/cljs-upgrade [--report] [all]`
 
-Upgrade the `org.clojure/clojurescript` dependency in `deps.edn` to the latest released version on Maven Central. Refreshes dependencies, runs the project's advanced-compile build, and refreshes clj-kondo imports. Reverts the version on compile failure.
+Upgrade the `org.clojure/clojurescript` dependency in `deps.edn` to the latest released version on Maven Central. Refreshes dependencies, runs the project's advanced-compile build, and refreshes clj-kondo imports. Reverts the version on compile failure. Pass `--report` to print the current and latest versions without writing or compiling.
 
 ```bash
 /cljs-upgrade
+/cljs-upgrade --report
 ```
 
-#### `/cljs-smells-review [scope or options...]` (placeholder)
+#### `/cljs-smells-review [path|all]` (placeholder)
 
-Reserves the command name for a future ClojureScript-specific smells review. Currently prints a "not yet implemented" notice that points users at `/clj-smells-review` in `clojure-skills` for host-neutral smells in `.cljs` files. See [TODO.md](TODO.md).
+Reserves the command name for a future ClojureScript-specific smells review. Pure-report skill (never writes). Currently prints a "not yet implemented" notice that points users at `/clj-smells-review` in `clojure-skills` for host-neutral smells in `.cljs` files. See [TODO.md](TODO.md).
 
 ### Auto-triggered
 
