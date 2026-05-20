@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [0.1.3] - 2026-05-20
+
+### Changed
+
+- `CONTRIBUTING.md` is aligned to the family-wide structural template. The Layout row for `CONVENTIONS.md` uses the canonical phrasing; step 1 of "Adding or modifying a skill" no longer carries an inline `CONVENTIONS.md` reminder (the dedicated Skill conventions section now opens with that pointer); the Skill conventions table cites package-specific example skills (`cljs-fix`, `cljs-new`).
+
 ## [0.1.2] - 2026-05-20
 
 ### Changed

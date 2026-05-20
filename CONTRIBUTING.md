@@ -12,7 +12,7 @@ For people working on the plugin source. End-user install instructions live in [
 | `opencode.jsonc`, `.opencode/package.json` | Local OpenCode configuration. |
 | `README.md` | End-user documentation. |
 | `CHANGELOG.md` | User-facing changes per version. |
-| `CONVENTIONS.md` | Argument grammar, scope vocabulary, and mutation defaults that every user-invocable skill follows. |
+| `CONVENTIONS.md` | Canonical argument grammar, scope vocabulary, and mutation defaults for every user-invocable skill. |
 | `CLAUDE.md`, `TODO.md` | Local working notes. Gitignored globally; never committed. |
 
 ## APM lockfile rule
@@ -21,7 +21,7 @@ Do not add `.claude-plugin/`, `.codex-plugin/`, `.agents/plugins/marketplace.jso
 
 ## Adding or modifying a skill
 
-1. Edit `.apm/skills/<name>/SKILL.md`. For user-invocable skills with an argument surface, follow [CONVENTIONS.md](CONVENTIONS.md) (argument grammar, scope vocabulary, mutation defaults).
+1. Edit `.apm/skills/<name>/SKILL.md`.
 2. Mirror the change to `.opencode/skills/<name>/SKILL.md` (byte-identical).
 3. Update `README.md` if the change is user-facing.
 4. Add a `CHANGELOG.md` entry under `[Unreleased]` for user-facing changes.
@@ -54,9 +54,11 @@ Runtime install (requires `apm` and the runtime CLIs you want to verify: `claude
 
 ## Skill conventions
 
+For the argument grammar, scope vocabulary, and mutation defaults that every user-invocable skill follows, see [CONVENTIONS.md](CONVENTIONS.md).
+
 | Setting | When to use |
 |---------|-------------|
-| `user-invocable: true`, `disable-model-invocation: true` | User-only slash command. |
+| `user-invocable: true`, `disable-model-invocation: true` | User-only slash command (for example `cljs-fix`, `cljs-new`). |
 | `user-invocable: false` (or omitted) | Model-invoked from conversation context (for example `clojurescript`). |
 
 Every skill carries `agents/openai.yaml` whose `policy.allow_implicit_invocation` matches the table above (`true` for model-invoked, `false` for user-only). Skills in this package use the JavaScript yellow brand color, `#F7DF1E`, so the runtimes can distinguish ClojureScript-specific guidance from the host-neutral `clojure` baseline (Clojure logo blue, `#5881D8`), the JVM `clojure-jvm` skill (Java orange, `#E76F00`), the Biff framework skill (Biff indigo, `#4338CA`), the Fulcro framework skill (Fulcro teal, `#009E9E`), and the ClojureDart skill (Flutter blue, `#02569B`).
