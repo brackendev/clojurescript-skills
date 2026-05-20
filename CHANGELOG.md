@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-05-20
+
+### Changed
+
+- The `cljs-tidy` skill is renamed to `cljs-fix` to adopt the noun-first canonical naming pattern (`<target>-<verb>`) shared across the agent-skills family. The verb suffix `-fix` consistently signals a mutating quality pipeline (lint, format, test, advanced, dry). Operators with a saved `/cljs-tidy` invocation should replace it with `/cljs-fix`. The skill's behavior is unchanged; only the name moves.
+
 ### 0.1.1
 
 #### Added

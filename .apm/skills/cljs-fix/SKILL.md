@@ -1,12 +1,12 @@
 ---
-name: cljs-tidy
-description: Tidy a ClojureScript project (lint, format, test, advanced, dry); format writes by default
+name: cljs-fix
+description: Fix a ClojureScript project (lint, format, test, advanced, dry); format writes by default
 argument-hint: "[lint|format|test|advanced|dry] [--report] [all]"
 user-invocable: true
 disable-model-invocation: true
 ---
 
-# ClojureScript Tidy
+# ClojureScript Fix
 
 Run lint, format, test, advanced-compilation, and duplicate-form checks on ClojureScript source files. The `format` step writes by default; `lint`, `test`, `advanced`, and `dry` are pure-read of source. See `CONVENTIONS.md` in the repo root for the argument grammar this skill follows.
 
@@ -23,7 +23,7 @@ Run lint, format, test, advanced-compilation, and duplicate-form checks on Cloju
 | `dry`             | Run dry only                                                                 |
 | `--report`        | Replace `cljfmt fix` with non-writing `cljfmt check` in the format step      |
 
-Step keywords are combinable (for example, `/cljs-tidy lint test dry`). The `--report` flag may appear in any position. When `--report` is present without an explicit step keyword, every step still runs; only the format step's behavior changes.
+Step keywords are combinable (for example, `/cljs-fix lint test dry`). The `--report` flag may appear in any position. When `--report` is present without an explicit step keyword, every step still runs; only the format step's behavior changes.
 
 The step keyword `dry` is the dry4clj duplicate-form scan, not a dry-run mode. Only the literal `--report` token disables writes.
 
@@ -124,7 +124,7 @@ Upstream dry4clj scans `.clj`, `.cljc`, and `.cljs` files by default, so the Clo
 After running all requested steps, print a summary:
 
 ```
-ClojureScript Tidy Results:
+ClojureScript Fix Results:
   Lint:     PASS/FAIL/SKIPPED
   Format:   PASS/FAIL/SKIPPED
   Test:     PASS/FAIL/SKIPPED

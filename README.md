@@ -42,7 +42,7 @@ Update later with `apm update [-g]`. Remove with `apm uninstall brackendev/cloju
 - A ClojureScript toolchain. The reference workflow uses the official [`cljs.main`](https://clojurescript.org/guides/quick-start) entry point via the [Clojure CLI](https://clojure.org/guides/install_clojure) (Java 17 or higher). [shadow-cljs](https://github.com/thheller/shadow-cljs) and [figwheel-main](https://github.com/bhauman/figwheel-main) are common community alternatives and are referenced where relevant.
 - [clojure-skills](https://github.com/brackendev/clojure-skills) installed alongside, for the host-neutral baseline.
 - [clj-kondo](https://github.com/clj-kondo/clj-kondo) for the lint steps in the user-invoked skills below.
-- The `cljs-tidy` dry step requires a [dry4clj](https://github.com/unclebob/dry4clj) `:dry4clj` alias in `deps.edn`.
+- The `cljs-fix` dry step requires a [dry4clj](https://github.com/unclebob/dry4clj) `:dry4clj` alias in `deps.edn`.
 
 ## Skills
 
@@ -56,15 +56,15 @@ Scaffold a new ClojureScript project with `deps.edn`, browser entry point, Node-
 /cljs-new hello-world
 ```
 
-#### `/cljs-tidy [lint|format|test|advanced|dry] [--report] [all]`
+#### `/cljs-fix [lint|format|test|advanced|dry] [--report] [all]`
 
 Tidy a ClojureScript project. Defaults to the full sequence (lint, format, test, advanced, dry). Each step is also addressable on its own. The `format` step writes by default (`cljfmt fix`); pass `--report` to swap it for non-writing `cljfmt check`. The `advanced` step runs the project under `:advanced` optimizations as a production-build sanity check and surfaces externs-inference failures. See [CONVENTIONS.md](CONVENTIONS.md) for the argument grammar this skill follows.
 
 ```bash
-/cljs-tidy
-/cljs-tidy lint
-/cljs-tidy advanced
-/cljs-tidy --report
+/cljs-fix
+/cljs-fix lint
+/cljs-fix advanced
+/cljs-fix --report
 ```
 
 #### `/cljs-upgrade [--report] [all]`

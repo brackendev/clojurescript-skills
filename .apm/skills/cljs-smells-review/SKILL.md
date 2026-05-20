@@ -64,7 +64,7 @@ cljs-smells-review is not yet implemented.
 
 A ClojureScript-specific smells catalog is in development. For now:
   - Run /clj-smells-review from clojure-skills for host-neutral smells in .cljs files.
-  - Use /cljs-tidy for lint, format, test, advanced-compilation, and duplicate-form checks.
+  - Use /cljs-fix for lint, format, test, advanced-compilation, and duplicate-form checks.
   - The clojurescript skill (auto-invoked) covers idiomatic ClojureScript style and JS interop.
 
 To track progress, see TODO.md in the clojurescript-skills repo.

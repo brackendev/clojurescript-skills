@@ -4,10 +4,10 @@
     "skill": {
       "clojurescript": "allow",
       "clojurescript-lenses": "allow",
+      "cljs-fix": "allow",
       "cljs-new": "allow",
-      "cljs-tidy": "allow",
-      "cljs-upgrade": "allow",
-      "cljs-smells-review": "allow"
+      "cljs-smells-review": "allow",
+      "cljs-upgrade": "allow"
     }
   }
 }
