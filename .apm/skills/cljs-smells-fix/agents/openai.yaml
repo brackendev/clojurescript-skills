@@ -1,0 +1,8 @@
+interface:
+  display_name: "ClojureScript Smells Fix"
+  short_description: "Fix ClojureScript code against a ClojureScript-specific smells catalog (placeholder, see TODO). When implemented, auto-applies mechanical and DEFECT findings. Pass --report to disable writes."
+  default_prompt: "Run /cljs-smells-fix."
+  brand_color: "#F7DF1E"
+
+policy:
+  allow_implicit_invocation: false

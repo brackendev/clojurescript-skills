@@ -76,9 +76,9 @@ Upgrade the `org.clojure/clojurescript` dependency in `deps.edn` to the latest r
 /cljs-upgrade --report
 ```
 
-#### `/cljs-smells-review [path|all]` (placeholder)
+#### `/cljs-smells-fix [path|all] [--report]` (placeholder)
 
-Reserves the command name for a future ClojureScript-specific smells review. Pure-report skill (never writes). Currently prints a "not yet implemented" notice that points users at `/clj-smells-review` in `clojure-skills` for host-neutral smells in `.cljs` files. See [TODO.md](TODO.md).
+Reserves the command name for a future ClojureScript-specific smells fix pipeline. When implemented, will mirror the mutation contract of `/clj-smells-fix` in `clojure-skills`: auto-apply Stage 1 mechanical findings and the Stage 2 `DEFECT`-tier safety band; report `SMELL` and `HINT` findings; honor `--report` to disable all writes. Currently prints a "not yet implemented" notice that points users at `/clj-smells-fix` in `clojure-skills` for host-neutral smells in `.cljs` files. See [TODO.md](TODO.md).
 
 ### Auto-triggered
 

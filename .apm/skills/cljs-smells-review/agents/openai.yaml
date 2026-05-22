@@ -1,8 +1,0 @@
-interface:
-  display_name: "ClojureScript Smells Review"
-  short_description: "Review ClojureScript code against a ClojureScript-specific smells catalog (placeholder, see TODO). Pure report; never writes."
-  default_prompt: "Review this ClojureScript code for ClojureScript-specific smells."
-  brand_color: "#F7DF1E"
-
-policy:
-  allow_implicit_invocation: false

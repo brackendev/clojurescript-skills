@@ -6,7 +6,7 @@
       "clojurescript-lenses": "allow",
       "cljs-fix": "allow",
       "cljs-new": "allow",
-      "cljs-smells-review": "allow",
+      "cljs-smells-fix": "allow",
       "cljs-upgrade": "allow"
     }
   }
