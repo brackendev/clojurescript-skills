@@ -1,6 +1,6 @@
 ---
 name: cljs-upgrade
-description: Upgrade the org.clojure/clojurescript dependency in deps.edn to the latest released version on Maven Central and verify the project compiles
+description: "Upgrade the org.clojure/clojurescript dependency in deps.edn to the latest released version on Maven Central and verify the project compiles"
 argument-hint: "[--report] [all]"
 user-invocable: true
 disable-model-invocation: true

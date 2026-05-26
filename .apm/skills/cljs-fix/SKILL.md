@@ -1,6 +1,6 @@
 ---
 name: cljs-fix
-description: Fix a ClojureScript project (lint, format, test, advanced, dry); format writes by default
+description: "Fix a ClojureScript project (lint, format, test, advanced, dry); format writes by default"
 argument-hint: "[lint|format|test|advanced|dry] [--report] [all]"
 user-invocable: true
 disable-model-invocation: true

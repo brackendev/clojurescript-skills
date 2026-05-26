@@ -1,7 +1,7 @@
 ---
 name: cljs-new
-description: Scaffold a new ClojureScript project with deps.edn and cljs.main
-argument-hint: <project-name>
+description: "Scaffold a new ClojureScript project with deps.edn and cljs.main"
+argument-hint: "<project-name>"
 user-invocable: true
 disable-model-invocation: true
 ---
