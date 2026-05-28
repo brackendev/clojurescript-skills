@@ -35,6 +35,8 @@ When implemented, the skill mirrors the mutation contract of `/clj-smells-fix`: 
 
 When (no argument) is invoked outside a git worktree, the eventual implementation will ask the operator what to fix rather than widening silently to `all`.
 
+The eventual implementation will honor Rule 4 in CONVENTIONS.md: vendored, generated, and dependency-locked paths are excluded from broad scopes (`.gitignore` matches plus a hardcoded floor of `node_modules/`, `vendor/`, `third_party/`, `.bundle/`, `target/`, `build/`, `dist/`, `out/`, `.shadow-cljs/`, `cljd-out/`, and the standard lock files). Naming a vendored path directly through `<path>` or `<glob>` bypasses the filter for that target.
+
 ## Status
 
 **Not implemented.** A ClojureScript-specific smells catalog is pending. Reusing the JVM-Clojure [clj-smells catalog](https://github.com/nufuturo-ufcg/clj-smells-catalog) catches the cross-dialect smells the `/clj-smells-fix` skill in [clojure-skills](https://github.com/brackendev/clojure-skills) already covers, but it does not flag the ClojureScript-specific failure modes that come from JavaScript interop, externs handling, advanced compilation, and the JS event loop.
