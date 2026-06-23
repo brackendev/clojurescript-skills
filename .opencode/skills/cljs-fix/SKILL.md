@@ -109,15 +109,33 @@ When the project has no advanced build alias and the namespace cannot be determi
 
 ### 5. Dry
 
-Scan for duplicate top-level forms with [dry4clj](https://github.com/unclebob/dry4clj):
+Scan for duplicate top-level forms with [dry4clj](https://github.com/unclebob/dry4clj). This step is advisory. It reports duplication candidates for review but never fails the run and never halts the pipeline.
+
+Determine the project's production source directories from its build configuration instead of assuming a directory name:
+
+- `deps.edn`: the top-level `:paths` (the `:dry4clj` alias is defined here). Tests usually live under a separate alias's `:extra-paths`, so scanning `:paths` excludes them.
+- `shadow-cljs.edn`: `:source-paths`.
+
+Scan the production source paths only and exclude test paths. If no configuration declares source paths, scan the source directories that exist in the repository, excluding any test directory. Do not assume `src`.
+
+Run dry4clj with EDN output over the resolved paths:
 
 ```bash
-clj -M:dry4clj src test
+clj -M:dry4clj --edn <source-paths...>
 ```
 
-If the project has no `test/` directory, scan `src` only.
+Do not pass `--threshold`, `--min-lines`, or `--min-nodes`. Scoping to production source removes the dominant noise, which is repeated test scaffolding; tightening the score or size knobs either hides real matches or has no effect on exact-structure duplicates.
 
-dry4clj exits 0 whether or not it finds candidates, so the step must inspect output. Report pass only when exit code is 0 and stdout contains the literal `No duplicate candidates found.`. Otherwise report fail and show the reported candidates. The project's `deps.edn` must define a `:dry4clj` alias; if the alias is missing, the Clojure CLI exits non-zero and the step fails.
+dry4clj always exits 0, and the EDN output never prints a clean-state message, so do not use the exit code or any text match as the signal. Parse the EDN map `{:candidates [...]}` and classify the result:
+
+| Result   | Condition                                                                                                                  |
+|----------|----------------------------------------------------------------------------------------------------------------------------|
+| `PASS`   | `:candidates` is empty.                                                                                                     |
+| `REVIEW` | `:candidates` has one or more entries. List them and continue.                                                             |
+| `ERROR`  | The command cannot run or its output cannot be parsed (for example, the `:dry4clj` alias is missing). Report the cause; do not report `PASS`. |
+| `SKIP`   | No production source path can be identified.                                                                               |
+
+For `REVIEW`, sort candidates by exact matches first (`:score` equal to `1.0`), then by descending `min(:left-nodes, :right-nodes)`, then by descending `:score`. Report the scanned source paths, the candidate count, and the highest-priority candidates with their score, node counts, and both file ranges. Note that each candidate needs source inspection before extraction, and that test directories were excluded because repeated test scaffolding is often intentional.
 
 Upstream dry4clj scans `.clj`, `.cljc`, and `.cljs` files by default, so the ClojureScript source is covered without additional configuration.
 
@@ -131,10 +149,10 @@ ClojureScript Fix Results:
   Format:   PASS/FAIL/SKIPPED
   Test:     PASS/FAIL/SKIPPED
   Advanced: PASS/FAIL/SKIPPED
-  Dry:      PASS/FAIL/SKIPPED
+  Dry:      PASS/REVIEW/ERROR/SKIPPED
 ```
 
-If `--report` was passed, append `(report mode: format checked, not written)` after the summary. If any step fails, stop and report the failure. Do not continue to subsequent steps.
+If `--report` was passed, append `(report mode: format checked, not written)` after the summary. If a lint, format, test, or advanced step fails, stop and report the failure; do not continue to subsequent steps. The dry step is advisory: it never fails the run and never halts the pipeline.
 
 ## Gotchas
 
