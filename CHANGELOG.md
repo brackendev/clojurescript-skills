@@ -1,6 +1,16 @@
 # Changelog
 
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
 ## [Unreleased]
+
+## [0.1.9] - 2026-07-29
+
+### Removed
+
+- The package manifest no longer declares the top-level `target: all` field. The APM manifest schema deprecates the `all` value: a parser treats the field as though it were absent and falls through to the `--target` flag or filesystem auto-detection, and the value is scheduled to become a hard parse error in a future APM release. Removing the field makes that fall-through behavior permanent. Installation behavior is unchanged, because APM already resolved targets by auto-detection rather than from this field. The separate `compilation.target` setting is not affected.
 
 ## [0.1.8] - 2026-06-23
 
@@ -46,20 +56,20 @@
 
 - The `cljs-tidy` skill is renamed to `cljs-fix` to adopt the noun-first canonical naming pattern (`<target>-<verb>`) shared across the agent-skills family. The verb suffix `-fix` consistently signals a mutating quality pipeline (lint, format, test, advanced, dry). Operators with a saved `/cljs-tidy` invocation should replace it with `/cljs-fix`. The skill's behavior is unchanged; only the name moves.
 
-### 0.1.1
+## [0.1.1] - 2026-05-19
 
-#### Added
+### Added
 
 - A repo-root `CONVENTIONS.md` that defines the argument grammar, scope vocabulary, and mutation defaults every user-invocable skill in this package follows. Three rules cover argument grammar (one sanctioned flag, `--report`), scope vocabulary (`(no argument)`, `all`, `<path>`), and mutation-as-default. The document lists `/cljs-new` as the standard's positional-required exemption and includes an author checklist that runs against every migrated skill.
 
-#### Changed
+### Changed
 
 - The `cljs-check` skill is renamed to `cljs-tidy`. The verb now matches the default behavior: `cljfmt fix` runs by default and rewrites files in the `format` step. Operators with a saved `/cljs-check` invocation should replace it with `/cljs-tidy`. The new `--report` flag swaps the format step for `cljfmt check`, which previews diffs without writing; `lint`, `test`, `advanced`, and `dry` are pure-read of source regardless.
 - The `cljs-upgrade` skill adds a `--report` flag that prints the current `:mvn/version` for `org.clojure/clojurescript` and the latest released version from Maven Central without writing `deps.edn` or running the advanced compile. The frontmatter description and `argument-hint` document the new grammar.
 - The `cljs-smells-review` skill renames its prior section structure to the canonical `## Arguments` table and clarifies in the frontmatter that the skill is pure-report (never writes). The opt-in `fix` modifier never existed for this skill, so no operator-facing invocations change.
 - The `cljs-new` skill adds a `## Arguments` section that documents its positional `<project-name>` exemption and a `## Mutation` section that lists the files it writes.
 
-## 0.1.0
+## [0.1.0] - 2026-05-17
 
 ### Added
 
