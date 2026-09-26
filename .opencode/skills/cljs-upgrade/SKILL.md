@@ -66,7 +66,7 @@ Otherwise, update the `:mvn/version` value in `deps.edn` to the latest version. 
 
 ```bash
 clj -P
-clj -M -m cljs.main --compile <main-ns>
+clj -M -m cljs.main --optimizations advanced --compile <main-ns>
 ```
 
 Where `<main-ns>` is the project's main namespace. Inspect `deps.edn` or the project README to determine it. If the project defines a `:build` alias, use that instead:

@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.1.12] - 2026-09-26
+
+### Fixed
+
+- The `cljs-fix` test step now runs the compiled test runner with `node out/test.js`. The `:test` alias only compiles the runner, so the step previously reported a pass without executing any tests. The `cljs-new` next-steps output shows the same command.
+- The `cljs-upgrade` compile check now builds under `:advanced` optimizations when the project has no `:build` alias, matching the advanced-compile verification the skill already described.
+- The `cljs-new` browser page now loads `out/main.js`, which is the file `cljs.main` produces, instead of `cljs-out/dev-main.js`.
+- The `cljs-smells-fix` placeholder no longer points to a `TODO.md` file that is not part of the published package. Its notice links to the repository instead.
+
 ## [0.1.11] - 2026-09-16
 
 ### Changed

@@ -69,13 +69,13 @@ Report pass if exit code is 0, fail otherwise. Show any formatting changes (unde
 
 ### 3. Test
 
-Run the ClojureScript test suite. The standard idiom is a Node test runner namespace that calls `cljs.test/run-tests`:
+Run the ClojureScript test suite. The standard idiom is a Node test runner namespace that calls `cljs.test/run-tests`. `cljs.main --compile` only compiles, so run the output with Node afterward:
 
 ```bash
-clj -M:test
+clj -M:test && node out/test.js
 ```
 
-The `:test` alias should compile and run the test runner under the Node target. Example alias shape (created by `/cljs-new`):
+The `:test` alias compiles the test runner for the Node target into `out/test.js`. Example alias shape (created by `/cljs-new`):
 
 ```clojure
 :test {:extra-paths ["test"]

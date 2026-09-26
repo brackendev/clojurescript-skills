@@ -1,6 +1,6 @@
 ---
 name: cljs-smells-fix
-description: "Fix ClojureScript code against ClojureScript-specific smells; placeholder, see TODO. When implemented, auto-applies mechanical and DEFECT-tier findings and reports the rest. Pass --report to disable writes."
+description: "Fix ClojureScript code against ClojureScript-specific smells; placeholder, not yet implemented. When implemented, auto-applies mechanical and DEFECT-tier findings and reports the rest. Pass --report to disable writes."
 argument-hint: "[path|all] [--report]"
 allowed-tools: Bash, Read, Edit, Grep, Glob
 user-invocable: true
@@ -55,10 +55,6 @@ When implemented, this review will cover ClojureScript-specific failure modes:
 - **JS interop hygiene**: `js->clj` without `:keywordize-keys true` followed by `:foo` lookups that miss, `clj->js` without symmetric `:keyword-fn`, direct `js/window` access in code that should run server-side under Node.
 - **Build-tool drift**: shadow-cljs and figwheel-main configuration disagreeing with `deps.edn`, `:foreign-libs` paths that point at moved files, mixed npm and CLJSJS dependencies for the same library.
 
-## Tracking
-
-See `TODO.md` in the repo root.
-
 ## Output
 
 When invoked, print this notice and exit:
@@ -71,7 +67,7 @@ A ClojureScript-specific smells catalog is in development. For now:
   - Use /cljs-fix for lint, format, test, advanced-compilation, and duplicate-form checks.
   - The clojurescript skill (auto-invoked) covers idiomatic ClojureScript style and JS interop.
 
-To track progress, see TODO.md in the clojurescript-skills repo.
+To track progress, see https://github.com/brackendev/clojurescript-skills.
 ```
 
-Do not run any analysis. Do not invoke clj-kondo. Do not consult the JVM clj-smells catalog. Do not write to any source file.
+Print the notice and stop. The skill has no analysis step yet, so running clj-kondo, the JVM catalog, or any edit would produce results outside this contract.

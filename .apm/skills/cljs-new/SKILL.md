@@ -141,7 +141,7 @@ Create `resources/public/index.html`:
   </head>
   <body>
     <div id="app">Loading...</div>
-    <script src="cljs-out/dev-main.js"></script>
+    <script src="out/main.js"></script>
   </body>
 </html>
 ```
@@ -219,7 +219,7 @@ Next steps:
   cd <project-name>
   clj -M --main cljs.main --compile <namespace>.core --repl   # Browser REPL
   clj -M -m cljs.main --repl-env node                          # Node REPL
-  clj -M:test                                                  # Run tests
+  clj -M:test && node out/test.js                              # Run tests
   clj -M:build                                                 # Advanced build
   clj -M:cljfmt fix                                            # Format source
   clj-kondo --lint src test                                    # Lint source
