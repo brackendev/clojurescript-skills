@@ -56,7 +56,7 @@ Minimal ClojureScript dependency (from the Quick Start):
 {:deps {org.clojure/clojurescript {:mvn/version "1.12.145"}}}
 ```
 
-The version above matches the upstream Quick Start at the time of writing. Check [the ClojureScript releases page](https://github.com/clojure/clojurescript/releases) for newer builds and update on a fresh project.
+ClojureScript 1.12.42 and later require Java 21 or higher, because the bundled Google Closure Compiler requires it. The version above matches the upstream Quick Start at the time of writing. Check [the ClojureScript releases page](https://github.com/clojure/clojurescript/releases) for newer builds and update on a fresh project.
 
 ## REPL
 
@@ -110,6 +110,8 @@ clj -M -m cljs.main --optimizations advanced -c <main-ns>
 
 The Google Closure Compiler aggressively renames property names that it does not see in an externs file. Enable externs inference and add `^js` / `^js/Foo.Bar` hints to silence inference warnings before promoting a build to advanced optimization. See the main `SKILL.md` for the externs inference workflow.
 
+ClojureScript 1.12.116 added two experimental compiler options for very small programs. `:lite-mode true` makes data literals use lighter copy-on-write collections, and `:elide-to-string true` removes the collection `toString` implementations so dead code elimination can drop the printer. Upstream describes them as useful only for simple programs: once a program has enough dependencies or uses enough of `cljs.core`, the size savings disappear. Do not enable them on an application build without measuring the output.
+
 ## NPM Interop
 
 Two patterns are in common use today.
@@ -145,6 +147,19 @@ CLJSJS coverage is uneven for newer packages; many projects migrate to a build t
 ```
 
 The string require form (`["react" :as react]`) is supported by shadow-cljs and figwheel-main. The plain `cljs.main` CLI also accepts it for projects configured to use the `:bundle` target. Consult each tool's documentation for current behavior before relying on edge cases.
+
+### Script-tag globals
+
+Since ClojureScript 1.12.116, `:require-global` gives a namespace alias to a library that the page loads as a global through a `<script>` tag, with no npm or bundler configuration:
+
+```clojure
+(ns my-app.core
+  (:require-global [Idiomorph :as idio]))
+
+(idio/morph el new-html)
+```
+
+This suits pages with one or two JavaScript dependencies, such as hypermedia-style applications. Projects that already consume `node_modules` should keep their build tool's npm support.
 
 ## Community Alternatives
 

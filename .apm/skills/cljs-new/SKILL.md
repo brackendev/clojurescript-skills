@@ -29,7 +29,7 @@ Verify these are installed before proceeding. If any are missing, stop and tell 
 
 - `clj` (Clojure CLI / tools.deps)
 - `clj-kondo` (Clojure linter; lints `.cljs` and `.cljc` too)
-- Java 17 or higher
+- Java 21 or higher (required by ClojureScript 1.12.42 and later)
 
 Check with:
 
@@ -69,7 +69,7 @@ Create `<project-name>/deps.edn`:
 
 ```clojure
 {:paths   ["src" "resources"]
- :deps    {org.clojure/clojure       {:mvn/version "1.12.0"}
+ :deps    {org.clojure/clojure       {:mvn/version "1.12.6"}
            org.clojure/clojurescript {:mvn/version "<latest-cljs-version>"}}
  :aliases
  {:dev     {:extra-paths ["dev"]}
@@ -81,7 +81,7 @@ Create `<project-name>/deps.edn`:
   :build   {:main-opts   ["-m" "cljs.main"
                           "--optimizations" "advanced"
                           "--compile" "<namespace>.core"]}
-  :cljfmt  {:extra-deps  {dev.weavejester/cljfmt {:mvn/version "0.13.0"}}
+  :cljfmt  {:extra-deps  {dev.weavejester/cljfmt {:mvn/version "0.16.6"}}
             :main-opts   ["-m" "cljfmt.main"]}}}
 ```
 
@@ -149,11 +149,10 @@ Create `resources/public/index.html`:
 ### 7. Create `.cljfmt.edn`
 
 ```clojure
-{:paths   ["src" "test"]
- :indents {ns   [[:inner 0]]
-           defn [[:inner 0]]
-           fn   [[:inner 0]]}}
+{:paths ["src" "test"]}
 ```
+
+Do not add an `:indents` key here. In cljfmt, `:indents` replaces every default indentation rule, so `let`, `try`, and `deftest` bodies would be misindented. Use `:extra-indents` to add rules for project macros.
 
 ### 8. Create `.gitignore`
 
@@ -228,7 +227,7 @@ Next steps:
 ## Gotchas
 
 - File names use underscores; namespace names use hyphens. `src/hello_world/core.cljs` corresponds to `(ns hello-world.core)`. Mismatches surface as "could not locate" errors at compile time.
-- `cljs.test/deftest`, `cljs.test/testing`, and `cljs.test/is` are macros. They must be brought in via `:refer-macros` (or `:include-macros true` on a single `:require`), not via plain `:refer`.
+- `cljs.test/deftest`, `cljs.test/testing`, and `cljs.test/is` are macros. Because `cljs.test` loads its own macros, a plain `:refer [deftest is testing]` works as well as the `:refer-macros` form the scaffold uses.
 - Node REPL stack traces are only source-mapped if `npm install source-map-support` is run inside the project. Browser REPL source mapping is automatic.
 - The `:build` alias above produces an advanced-compiled bundle. Enable externs inference (`:infer-externs true` in the compiler options, `(set! *warn-on-infer* true)` per namespace) before relying on advanced builds; see the main `clojurescript` skill for details.
 - `cljs.main` does not include a file watcher. For an incremental development loop with hot reload, install [shadow-cljs](https://github.com/thheller/shadow-cljs) or [figwheel-main](https://github.com/bhauman/figwheel-main) and migrate the project layout to that tool.

@@ -156,6 +156,7 @@ If `--report` was passed, append `(report mode: format checked, not written)` af
 
 ## Gotchas
 
+- clj-kondo versions before 2026.05.25 do not recognize `cljs.core/await` and report `Unresolved symbol: await` in `^:async` functions. Treat that lint failure as an outdated clj-kondo, upgrade it, and re-run the lint step. Do not suppress the symbol in `.clj-kondo/config.edn`.
 - `clj-kondo` lints `.cljs` and `.cljc` files but does not run the ClojureScript compiler. Type-related failures (`Cannot infer target type`, missing externs) only surface in the `advanced` step.
 - The `test` step assumes the project compiles its test suite for Node and runs through `cljs.main`. shadow-cljs and figwheel-main projects need their own command; detect the toolchain before invoking.
 - The `advanced` step is slow on first run (the Google Closure Compiler does whole-program analysis). Caching is automatic across runs.

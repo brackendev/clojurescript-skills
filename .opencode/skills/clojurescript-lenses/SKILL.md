@@ -66,7 +66,7 @@ When the [code-lenses](https://github.com/brackendev/code-lenses) plugin is acti
 - Let It Crash, ClojureScript edition: catch JS-typed exceptions where they have a named type (`js/TypeError`, `js/Error`) and `:default` for the catch-all. For background work (web workers, service workers), surface failure to the main thread and let the supervisor decide. There is no Erlang-style supervisor on the JS host.
 - Boring tests: `cljs.test` with `(is (= (f input) expected))` is the boring test. Reach for `with-redefs`-style stubbing rarely; ClojureScript's var semantics do not match JVM's, and dependency injection through function arguments or protocols is more honest.
 - Declare what, not how: spec / Malli schemas, re-frame interceptors, and Reagent reactions are declarations. Prefer them to imperative effect chains.
-- Atoms remain honest state. The JS host is single-threaded per realm, so `swap!` semantics simplify: no race conditions inside a synchronous call. `core.async` channels are honest when the use case requires backpressure or pipelines, but a `js/Promise` is simpler for a single asynchronous action.
+- Atoms remain honest state. The JS host is single-threaded per realm, so `swap!` semantics simplify: no race conditions inside a synchronous call. `core.async` channels are honest when the use case requires backpressure or pipelines, but a Promise is simpler for a single asynchronous action. On ClojureScript 1.12.145 or later, an `^:async` function with `await` reads as straight-line code and keeps error handling in ordinary `try` / `catch`, which is more honest than a nested `.then` chain.
 
 ## Legacy Code
 

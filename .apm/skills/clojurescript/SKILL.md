@@ -7,15 +7,18 @@ description: >-
   figwheel-main.edn, ClojureScript deps.edn projects, cljs.test, JavaScript
   interop (`js/`, `.-prop`, `(.method obj ...)`, `set!` on properties,
   `js-obj`, `clj->js`, `js->clj`, `goog.object/get`, `goog.object/set`,
-  `aget`, `aset`), externs inference (`^js`, `^js/Foo`, `*warn-on-infer*`,
+  `aget`, `aset`), global references (`:refer-global`, `:require-global`),
+  method values (`String/.toUpperCase`, `Date/new`), async functions
+  (`^:async`, `await`, `deftest ^:async`, `js/Promise`), externs inference
+  (`^js`, `^js/Foo`, `*warn-on-infer*`,
   `:infer-externs`), macro stage separation (`:require-macros`,
   `:refer-macros`, `:include-macros`), reader conditionals (`#?`, `#?@`,
   `:cljs`, `:default`), JS-flavored numerics (no `Ratio`, `BigInt`,
   `BigDecimal`; `(= 0.0 0)` is true), `^boolean` type hint, browser REPL,
   Node REPL, source maps, npm interop, the `cljs.main` CLI, shadow-cljs, or
-  figwheel-main. Covers JavaScript interop, host-typed exception handling
-  (`catch :default`, `js/Error`), externs and advanced compilation, macro
-  stage separation, JS-flavored numerics and truthiness, host-specific
+  figwheel-main. Covers JavaScript interop, async functions, host-typed
+  exception handling (`catch :default`, `js/Error`), externs and advanced
+  compilation, macro stage separation, JS-flavored numerics and truthiness, host-specific
   aliases (`goog.object`, `goog.string`, `goog.dom`), and the ClojureScript
   project workflow.
 user-invocable: false
@@ -30,15 +33,16 @@ JVM and ClojureDart deltas live in their own packages ([clojure-jvm-skills](http
 ## Key Rules
 
 1. **Property access uses a leading hyphen.** `(.-prop obj)` reads a property; `(set! (.-prop obj) v)` assigns it. `(.method obj args)` calls a method. The hyphen is what distinguishes property access from method invocation in ClojureScript.
-2. **Globals live under the `js/` namespace.** `js/document`, `js/window`, `js/Promise`, `js/Error`. There is no other path to native globals.
+2. **Globals live under the `js/` namespace unless the namespace refers them.** `js/document`, `js/window`, `js/Promise`, `js/Error`. Since ClojureScript 1.12.116, `(:refer-global :only [Promise])` in the `ns` form makes `Promise` usable without the prefix. On older compilers, `js/` is the only path to native globals.
 3. **Catch with `:default` when you want to catch everything; otherwise name a JS type.** ClojureScript supports `(catch :default e ...)`. Prefer `js/Error` and its subclasses (`js/TypeError`, `js/RangeError`, `js/SyntaxError`) when the failure mode has a named JS type.
-4. **Macros must be defined in `.clj` or `.cljc` files and required with `:require-macros`, `:refer-macros`, or `:include-macros`.** Macros and functions run in different compilation stages. A macro and a function may share the same name.
+4. **Macros must be defined in `.clj` or `.cljc` files.** Macros and functions run in different compilation stages. A macro and a function may share the same name. Consumers load macros with `:require-macros`, `:refer-macros`, or `:include-macros`, or with a plain `:require` and `:refer` when the library namespace loads its own macros (implicit macro loading, which covers `cljs.test`).
 5. **`:import` is only for Google Closure classes.** `(:import [goog Uri])` works; `(:import [java.util Date])` does not exist on this host. Use `(:require ...)` and `js/` for everything else.
 6. **No `gen-class`, no refs, no agents, no STM.** Atoms are the only built-in state primitive. Concurrency primitives that depend on multiple OS threads do not exist; JS has a single execution thread per realm.
 7. **Numbers are JavaScript numbers.** There is no `Ratio`, `BigDecimal`, or `BigInt` literal. `(= 0.0 0)` evaluates to `true`. Use `js/BigInt` directly when arbitrary-precision integers are required.
 8. **Use `^boolean` to avoid checked-`if`.** It is the only type hint with runtime significance for code generation, and it suppresses the runtime check that copes with JavaScript's wider falsy set (`0`, `""`, `NaN`, `null`, `undefined`).
 9. **Use `^js` and `^js/Foo.Bar` to drive externs inference for advanced compilation.** Without hints on foreign JavaScript values, the Google Closure Compiler may rename property names and break interop at advanced optimization levels.
 10. **Convert at the boundary, not at every use.** Use `js->clj` and `clj->js` once at the interop boundary to translate between persistent collections and native JS objects, then operate on Clojure data inside the namespace.
+11. **Use `^:async` and `await` for Promise-based code on ClojureScript 1.12.145 or later.** Put `^:async` on the function name or on the `fn` symbol, never on the argument vector. `await` is valid only directly inside an `^:async` function.
 
 ## JavaScript Interop
 
@@ -92,6 +96,22 @@ Use the same dot form Clojure uses for JVM constructors, but the class is reache
 (js/Promise. (fn [resolve reject] ...))
 ```
 
+### Referred globals and method values
+
+ClojureScript 1.12.116 added `:refer-global` and Clojure 1.12 method value syntax. `:refer-global` lists the globals a namespace uses without the `js/` prefix and accepts `:rename`. Only one `:refer-global` clause is allowed per `ns` form. Once a global is referred, `Class/member` reaches its static members, `Class/new` is the constructor, and `Class/.method` is a function that calls the instance method on its first argument:
+
+```clojure
+(ns my-app.core
+  (:refer-global :only [Date Promise String] :rename {Date JsDate}))
+
+(JsDate/now)                                  ;; js/Date.now
+(JsDate/new)                                  ;; (js/Date.)
+(Promise/resolve 10)                          ;; (.resolve js/Promise 10)
+(mapv String/.toUpperCase ["foo" "bar"])      ;; ["FOO" "BAR"]
+```
+
+`:require-global` gives a namespace alias to a library that the page already loaded as a global, usually through a `<script>` tag, with no build configuration: `(:require-global [Idiomorph :as idio])`, then `(idio/morph ...)`. At the REPL, `(refer-global :only '[Date])` and `(require-global '[Idiomorph :as idio])` do the same. Keep the `js/` forms when the project must compile on ClojureScript versions before 1.12.116.
+
 ### Native object creation
 
 ```clojure
@@ -135,6 +155,41 @@ Prefer `goog.object/get` and `goog.object/set` for object property access when t
 ```
 
 `(js->clj x :keywordize-keys true)` converts string keys to Clojure keywords. The default leaves them as strings.
+
+ClojureScript 1.12.116 also added `cljs.proxy`, an experimental namespace that exposes ClojureScript maps as JavaScript objects and vectors as array-like values without copying them through `clj->js`. Treat it as experimental and keep `clj->js` as the default at the boundary.
+
+## Async Functions
+
+Since ClojureScript 1.12.145, `^:async` makes the compiler emit a JavaScript async function, and `await` suspends it until a Promise settles. The function always returns a Promise. `try` / `catch` around `await` handles rejections the same way it handles synchronous throws:
+
+```clojure
+(ns my-app.api
+  (:refer-global :only [Promise fetch]))
+
+;; good: metadata on the name, await directly in the async body
+(defn ^:async fetch-json [url]
+  (try
+    (let [resp (await (fetch url))]
+      (js->clj (await (.json resp)) :keywordize-keys true))
+    (catch :default e
+      {:error (ex-message e)})))
+
+;; good: await several Promises in parallel
+(defn ^:async fetch-all [urls]
+  (await (Promise/all (mapv fetch-json urls))))
+
+;; bad: metadata on the argument vector is ignored, and await fails to compile
+(defn fetch-json ^:async [url]
+  (await (fetch url)))
+```
+
+- Put `^:async` on the function name (`(defn ^:async f ...)`) or on the `fn` symbol (`(^:async fn [x] ...)`). Metadata on the argument vector or on the whole `(fn ...)` form is ignored.
+- Every arity of a multi-arity function is async. Sync and async arities cannot be mixed.
+- A function created inside an async function is not async unless it carries its own `^:async`. Calling `await` inside a plain `fn` passed to `map` fails to compile with "await can only be used in async contexts". Use `Promise/all` over a vector of Promises instead.
+- There is no top-level `await`.
+- `await` here is a `cljs.core` macro and is unrelated to `clojure.core/await` for JVM agents.
+
+Prefer `^:async` over `.then` chains and over `core.async` for single asynchronous actions on projects that use 1.12.145 or later. `core.async` remains the tool for channels, backpressure, and pipelines.
 
 ## Exception Handling
 
@@ -224,7 +279,8 @@ A macro and a function can have the same name in ClojureScript; this is unlike J
 - `:import` is only for Google Closure classes (e.g., `goog.Uri`, `goog.date.Date`). JavaScript classes that are not Closure classes are reached through `js/` or via `:require` of an npm/bundled module.
 - `:refer :all` is not supported on ClojureScript.
 - `gen-class` and `gen-interface` are not implemented.
-- `Foo/bar` always means `Foo` is a namespace. There is no `Class/staticMember` form for JS classes; use `(.member js/Class)` or import the value.
+- `Foo/bar` resolves `Foo` as a namespace, a namespace alias, a ClojureScript type (`PersistentVector/EMPTY`), or, since 1.12.116, a global referred with `:refer-global`. For a global that is not referred, use `(.member js/Class)` or `js/Class.member`.
+- `:refer-global` and `:require-global` are accepted `ns` clauses since 1.12.116. See "Referred globals and method values" above.
 
 ## Type Hints and Externs
 
@@ -285,7 +341,7 @@ Clojure's `if` treats only `nil` and `false` as falsy on every host, including C
   (true? (:flagged? user)))
 ```
 
-For runtime predicates on JS values, use the canonical Clojure predicates (`nil?`, `string?`, `number?`, `boolean?`, `fn?`) rather than `goog.isString` and friends. Closure's `goog.isXxx` helpers are deprecated in modern Closure and are not idiomatic ClojureScript.
+For runtime predicates on JS values, use the canonical Clojure predicates (`nil?`, `string?`, `number?`, `boolean?`, `fn?`) rather than `goog.isString` and friends. Upstream Google Closure Library removed several `goog.isXxx` helpers, and the Clojure-maintained fork that ClojureScript depends on since 1.12.42 restored them for older libraries. They work, but they are not idiomatic ClojureScript.
 
 ## Characters
 
@@ -387,6 +443,18 @@ For `.cljc` tests that run on both hosts, use a reader conditional in the requir
   (is (thrown? #?(:clj Exception :cljs js/Error) (core/parse-int! "not-a-number"))))
 ```
 
+`cljs.test` loads its own macros, so `(:require [cljs.test :refer [deftest is testing]])` works as well as the `:refer-macros` form above.
+
+Since 1.12.145, `deftest ^:async` defines a test whose body can `await` Promises. The test runner waits for the returned Promise before moving on:
+
+```clojure
+(deftest ^:async fetch-json-test
+  (let [result (await (api/fetch-json "/fixtures/user.json"))]
+    (is (= "Bruce" (:name result)))))
+```
+
+On older compilers, use `cljs.test/async` with a `done` callback.
+
 `with-redefs` is not the same as on the JVM (vars are not reified). Prefer passing dependencies as arguments, or use protocols at boundaries with test doubles.
 
 ## Project Workflow
@@ -422,3 +490,15 @@ The reader functions are not in `cljs.core`; they are in `cljs.reader`. Use `(re
 ### `:elide-asserts` over `*assert*`
 
 Setting `*assert*` to false at runtime does not work on ClojureScript. Use the `:elide-asserts true` compiler option for production builds to remove `assert` calls.
+
+### New interop syntax requires a recent compiler
+
+`:refer-global`, `:require-global`, and method values (`String/.toUpperCase`, `Date/new`) need ClojureScript 1.12.116 or later. `^:async` and `await` need 1.12.145 or later. Check the project's `org.clojure/clojurescript` version, or the version bundled with its shadow-cljs release, before writing them. On older compilers the `ns` form fails to parse or `await` resolves to nothing.
+
+### `await` inside a nested `fn`
+
+`await` belongs to the innermost function, not to the enclosing `^:async` function. `(map (fn [url] (await (fetch url))) urls)` inside an async function fails to compile with "await can only be used in async contexts". Marking the inner `fn` `^:async` compiles but returns a seq of Promises. Collect the Promises with `mapv` and `await` a single `Promise/all`.
+
+### Older clj-kondo flags `await`
+
+clj-kondo recognizes `cljs.core/await` starting with v2026.05.25, which also added the `:await-without-async-fn` and `:misplaced-async-metadata` linters. Older versions report `error: Unresolved symbol: await`. Upgrade clj-kondo instead of suppressing the error.

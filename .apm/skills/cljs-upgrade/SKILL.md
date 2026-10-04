@@ -102,4 +102,5 @@ ClojureScript upgraded:
 - Maven Central's `solrsearch` endpoint occasionally returns no rows when the index is being refreshed. Re-run the query if the response has zero results before falling back to asking the user.
 - Pre-release versions appear in the search results with suffixes like `-rc1` or `-alpha1`. The `&rows=1` query returns the most recent regardless of stability. Confirm with the user before applying a non-stable version.
 - Some projects pin ClojureScript via a Git SHA (`{:git/url "https://github.com/clojure/clojurescript" :sha "..."}`) rather than `:mvn/version`. This skill only handles the `:mvn/version` path; if a Git dependency is present, stop and tell the user.
+- ClojureScript 1.12.42 and later require Java 21. When the upgrade crosses that version, check `java -version` before compiling. On an older JDK the compile step fails and the skill reverts the version, so report the Java requirement instead of a generic compile failure.
 - shadow-cljs projects often pin ClojureScript through `shadow-cljs.edn` rather than `deps.edn`. Detect `shadow-cljs.edn` and update there if `deps.edn` does not name `org.clojure/clojurescript`.

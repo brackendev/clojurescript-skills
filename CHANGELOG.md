@@ -6,6 +6,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.1.13] - 2026-10-04
+
+### Added
+
+- The `clojurescript` skill covers async functions from ClojureScript 1.12.145: `^:async` placement, `await`, `deftest ^:async`, waiting on several Promises with `Promise/all`, and the compile error raised when `await` appears inside a nested non-async `fn`.
+- The `clojurescript` skill covers `:refer-global`, `:require-global`, and Clojure 1.12 method value syntax (`String/.toUpperCase`, `Date/new`) from ClojureScript 1.12.116, and notes the experimental `cljs.proxy` namespace. The project workflow reference adds script-tag globals through `:require-global` and the experimental `:lite-mode` and `:elide-to-string` compiler options.
+- The `clojurescript` and `cljs-fix` skills explain that clj-kondo versions before 2026.05.25 report `Unresolved symbol: await`, and direct an upgrade instead of a suppression.
+- The `cljs-upgrade` skill checks for Java 21 when an upgrade crosses ClojureScript 1.12.42.
+
+### Changed
+
+- The `cljs-new` prerequisites and the README now require Java 21, which ClojureScript 1.12.42 and later need. They previously stated Java 17.
+- The `cljs-new` scaffold pins `org.clojure/clojure` 1.12.6 and `cljfmt` 0.16.6.
+- The `clojurescript` skill no longer describes the `goog.isXxx` helpers as deprecated. The Clojure-maintained Closure Library fork restored them in ClojureScript 1.12.42, and the skill still recommends the core predicates.
+
+### Fixed
+
+- The `.cljfmt.edn` that `cljs-new` writes no longer sets `:indents`. That key replaces all of cljfmt's default indentation rules, so `cljfmt fix` misindented `let`, `try`, and `deftest` bodies in scaffolded projects.
+- The `cljs-new` gotcha and the `clojurescript` macro rule no longer claim that `cljs.test` macros require `:refer-macros`. `cljs.test` loads its own macros, so a plain `:refer` works.
+
 ## [0.1.12] - 2026-09-26
 
 ### Fixed
