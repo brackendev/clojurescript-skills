@@ -1,9 +1,15 @@
 ---
 name: cljs-fix
-description: "Fix a ClojureScript project (lint, format, test, advanced, dry); format writes by default"
+description: >-
+  Fix a ClojureScript project with lint, format, test, advanced, and dry
+  (duplicate-form) steps. The format step writes by default. Use when asked to
+  lint, format, test, or check a ClojureScript project (shadow-cljs.edn,
+  figwheel-main.edn, or cljs.main), to fix clj-kondo warnings or cljfmt
+  formatting in .cljs files, or to verify an :advanced build. For Fulcro
+  projects, prefer /fulcro-fix when installed. Use --report to replace the
+  formatting write with cljfmt check.
 argument-hint: "[lint|format|test|advanced|dry] [--report] [all]"
 user-invocable: true
-disable-model-invocation: true
 ---
 
 # ClojureScript Fix

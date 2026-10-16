@@ -89,7 +89,7 @@ A skill is classified by its actual behavior, not by its name. If the name and b
 | `/cljs-upgrade`        | Mutating        | Yes                    | Rewrites `:mvn/version` for `org.clojure/clojurescript` in `deps.edn`. `--report` prints the previous and remote version without writing. |
 | `/cljs-smells-fix`     | Mutating        | Yes                    | Placeholder until the ClojureScript smells catalog ships. When implemented, mirrors the mutation contract of `/clj-smells-fix`: Stage 1 mechanical and Stage 2 DEFECT-band findings auto-applied; `--report` disables all writes. |
 
-Model-invocable skills (`clojurescript`, `clojurescript-lenses`) have no argument surface and are not classified here.
+The model-only reference skills (`clojurescript`, `clojurescript-lenses`) have no argument surface and are not classified here.
 
 ## Section structure
 

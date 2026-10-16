@@ -2,7 +2,7 @@
 
 ClojureScript development skills packaged as an [APM](https://github.com/microsoft/apm) plugin. One install deploys the full set to every runtime in APM's default target set: Claude Code, Codex, OpenCode, Cursor, Copilot, Gemini, Windsurf, Kiro, and Grok Build. Antigravity is supported by naming it explicitly with `--target antigravity`.
 
-Skills follow the [Agent Skills](https://agentskills.io) open standard. Two auto-trigger from conversation context (`clojurescript`, `clojurescript-lenses`); the rest appear as slash commands.
+Skills follow the [Agent Skills](https://agentskills.io) open standard. Two auto-trigger from conversation context (`clojurescript`, `clojurescript-lenses`); the rest appear as slash commands. The agent can also run `/cljs-fix` from a natural-language request. `/cljs-new`, `/cljs-upgrade`, and `/cljs-smells-fix` run only as typed slash commands.
 
 This package layers on top of the host-neutral [clojure-skills](https://github.com/brackendev/clojure-skills) baseline. Install both together so the `clojure` skill handles general Clojure family style (naming, threading, collections, atoms, dispatch, formatting, namespaces, testing) and this package covers JavaScript interop, externs inference, macro stage separation, host-typed exceptions, JS-flavored numerics and truthiness, the `cljs.main` CLI workflow, and the production-build sanity checks that come with advanced compilation.
 

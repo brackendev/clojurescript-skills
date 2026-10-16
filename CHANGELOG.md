@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.1.14] - 2026-10-17
+
+### Changed
+
+- In Claude Code and Codex, the agent can now run `/cljs-fix` from a natural-language request, such as "lint this ClojureScript project", as well as from the slash command. Its description now states when to use it. `/cljs-new`, `/cljs-upgrade`, and `/cljs-smells-fix` remain user-only.
+
 ## [0.1.13] - 2026-10-04
 
 ### Added

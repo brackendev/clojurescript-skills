@@ -5,4 +5,4 @@ interface:
   brand_color: "#F7DF1E"
 
 policy:
-  allow_implicit_invocation: false
+  allow_implicit_invocation: true
