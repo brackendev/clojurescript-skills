@@ -43,7 +43,7 @@ Report-only mode suppresses intentional source and project-configuration edits. 
 
 Only the literal token `--report` enables report-only mode. Natural-language phrases ("preview", "dry run", "rehearse") are scope input or step keywords, not mode triggers. A skill that conflates them is wrong.
 
-Command suffixes reinforce the default. The family follows a noun-first `<target>-<verb>` pattern, so the trailing verb signals behavior. Skills with suffix `-fix`, `-new`, `-upgrade` (verbs that imply action) mutate by default; in this package, `/cljs-fix`, `/cljs-new`, `/cljs-upgrade`, and the forthcoming `/cljs-smells-fix`. Skills with suffix `-review` (a reading verb) are pure-report; this package currently has none.
+Command suffixes reinforce the default. The family follows a noun-first `<target>-<verb>` pattern, so the trailing verb signals behavior. Skills with suffix `-fix`, `-new`, `-upgrade` (verbs that imply action) mutate by default. In this package they are `/cljs-fix`, `/cljs-new`, and `/cljs-upgrade`. Skills with suffix `-review` (a reading verb) are pure-report, and this package has none.
 
 ### Rule 4: vendored and generated paths are excluded by default
 
@@ -66,7 +66,7 @@ The boundary statement: Rule 4 applies to mutating skills that discover candidat
 
 **Reporting.** The skill includes a single "skipped N vendored or generated paths" line in its results when the filter excluded any path. Under `--report`, the skill emits the full list so the operator can audit scope.
 
-**Scope of Rule 4 in this plugin.** Applies to `/cljs-fix` and `/cljs-smells-fix`, both of which discover candidate files from the workspace. Exempt: `/cljs-new` is scaffolding, and `/cljs-upgrade` rewrites the `org.clojure/clojurescript` dependency declaration in `deps.edn`. Their target sets are not workspace discovery. The `advanced` step of `/cljs-fix` produces JavaScript output under the configured `:output-dir`; build-artifact writes are out of scope for Rule 4 because the rule governs source mutation, not compiler outputs.
+**Scope of Rule 4 in this plugin.** Applies to `/cljs-fix`, which discovers candidate files from the workspace. Exempt: `/cljs-new` is scaffolding, and `/cljs-upgrade` rewrites the `org.clojure/clojurescript` dependency declaration in `deps.edn`. Their target sets are not workspace discovery. The `advanced` step of `/cljs-fix` produces JavaScript output under the configured `:output-dir`; build-artifact writes are out of scope for Rule 4 because the rule governs source mutation, not compiler outputs.
 
 The file-aware mutating skills include a one-line reference to Rule 4 in their own `## Mutation` or `## Scope` section.
 
@@ -87,7 +87,6 @@ A skill is classified by its actual behavior, not by its name. If the name and b
 | `/cljs-fix`           | Mutating        | Yes                    | `format` step runs `cljfmt fix` by default. `--report` swaps it for `cljfmt check`. `lint`, `test`, `advanced`, and `dry` are pure-read of source regardless. |
 | `/cljs-new`            | Mutating        | No                     | Scaffolds the project tree. Preview the side effects by reading `SKILL.md`. |
 | `/cljs-upgrade`        | Mutating        | Yes                    | Rewrites `:mvn/version` for `org.clojure/clojurescript` in `deps.edn`. `--report` prints the previous and remote version without writing. |
-| `/cljs-smells-fix`     | Mutating        | Yes                    | Placeholder until the ClojureScript smells catalog ships. When implemented, mirrors the mutation contract of `/clj-smells-fix`: Stage 1 mechanical and Stage 2 DEFECT-band findings auto-applied; `--report` disables all writes. |
 
 The model-only reference skills (`clojurescript`, `clojurescript-lenses`) have no argument surface and are not classified here.
 
@@ -136,25 +135,13 @@ The skill writes when the `format` step runs without `--report`. With `--report`
 
 The default rewrites `:mvn/version` for `org.clojure/clojurescript` in `deps.edn` and verifies with an advanced compile. With `--report`, the skill prints the current `:mvn/version` and the latest released version on Maven Central. No writes. No compile.
 
-### `/cljs-smells-fix` -- mutating skill with `--report` (placeholder)
-
-```
-/cljs-smells-fix                         # fix changed files
-/cljs-smells-fix src/my_app              # fix files under directory
-/cljs-smells-fix src/my_app/core.cljs    # fix specific file
-/cljs-smells-fix all                     # fix the full codebase
-/cljs-smells-fix --report                # produce the report only; no writes
-```
-
-The body remains a placeholder until the ClojureScript smells catalog ships. When implemented, the skill will mirror the mutation contract of `/clj-smells-fix`: Stage 1 mechanical findings and Stage 2 `DEFECT`-tier findings within a defined safety band are auto-applied; `SMELL` and `HINT` findings remain report-only; `--report` disables all writes.
-
 ## Exemptions
 
 `/cljs-new` accepts a required positional `<project-name>` because no useful default exists for scaffolding. It omits the `all` and `<path>` scope rows and the `--report` flag for the same reason. The `## Arguments` table in its `SKILL.md` documents the positional grammar.
 
 ## Ambiguity notes
 
-**`(no argument)` outside a git worktree.** A skill whose narrowest useful default depends on git state (for example, "review changed files") must define the fallback when no git worktree is present. The expected fallback is to ask the operator what to review rather than to widen silently to `all`. In this plugin, `/cljs-smells-fix` will document this fallback when its body lands; `/cljs-fix`, `/cljs-upgrade`, and `/cljs-new` derive scope from `deps.edn` and the project tree rather than from a diff, so the question does not apply.
+**`(no argument)` outside a git worktree.** A skill whose narrowest useful default depends on git state (for example, "review changed files") must define the fallback when no git worktree is present. The expected fallback is to ask the operator what to review rather than to widen silently to `all`. In this plugin, `/cljs-fix`, `/cljs-upgrade`, and `/cljs-new` derive scope from `deps.edn` and the project tree rather than from a diff, so the question does not apply.
 
 **`commit` versus staged-and-unstaged state.** When a future skill accepts `commit` as a scope keyword, it must state whether `commit` means the most recent commit, the staged tree, or the staged-plus-unstaged working tree. The expected default is the most recent commit. None of the current skills carry this scope.
 

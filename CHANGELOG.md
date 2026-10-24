@@ -6,6 +6,35 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.1.18] - 2026-10-24
+
+### Added
+
+- The Companion packages table lists [electric-skills](https://github.com/brackendev/electric-skills), the new companion package for the [Electric](https://github.com/hyperfiddle/electric) v3 full-stack framework, and `CONTRIBUTING.md` cites its Hyperfiddle lavender brand color (`#B7A4C2`).
+- The ClojureScript workflows reference notes that shadow-cljs 3.x requires Java 21, and that `:deps` in `shadow-cljs.edn` makes shadow-cljs take its source paths and dependencies from `deps.edn`.
+
+### Changed
+
+- The `/cljs-fix` description points Electric projects to `/electric-fix` when it is installed, alongside `/fulcro-fix` for Fulcro projects.
+- The Companion packages table names the major version each framework package targets: Biff 2, Electric v3, and Fulcro 3. The skills in those packages do not apply to other major versions.
+- `/cljs-new` adds a `:dry4clj` alias, so `/cljs-fix` runs its duplicate-form step on a new project. When a project has no such alias, `/cljs-fix` reports the dry step as `SKIP` and shows the alias to add, instead of reporting `ERROR`.
+- `/cljs-new` states the date its fixed versions were last verified (`org.clojure/clojure` 1.12.6 and cljfmt 0.16.6 on 2026-10-24). The ClojureScript version is still fetched at run time.
+- `CONTRIBUTING.md` asks for a changelog entry and a version increment for every change to a published file, including documentation-only changes, which matches the release history. It asked for entries only for user-facing changes.
+
+### Removed
+
+- The `/cljs-smells-fix` placeholder is removed. It only printed a not-implemented notice. Run `/clj-smells-fix` from clojure-skills for host-neutral smells in `.cljs` and `.cljc` files.
+
+### Fixed
+
+- The `CONTRIBUTING.md` Layout table names the local `AGENTS.md`, `GEMINI.md`, and `TODO.md` files. It named `CLAUDE.md`, which the package does not use.
+- `/cljs-fix`, `/cljs-new`, and `/cljs-upgrade` link to the package's `CONVENTIONS.md` on GitHub. They pointed to a `CONVENTIONS.md` in the repository root, which is not installed alongside the skills.
+- `/cljs-fix` reads source paths from `deps.edn` when `shadow-cljs.edn` sets `:deps`, because shadow-cljs then ignores its own `:source-paths`.
+- The README explains how Codex, OpenCode, and Gemini CLI offer the commands: Codex runs a skill as `$name` from its `/skills` list, OpenCode attaches one with `@name`, and Gemini CLI does not read the user-only setting. It said every command appears as a slash command and that user-only commands run only when typed.
+- `CONTRIBUTING.md` states that `agents/openai.yaml` sets `allow_implicit_invocation` to `true` for every skill the model can run, including slash commands that the model can also run. It named only model-invoked and user-only skills.
+- `/cljs-fix` reports the dry step as `ERROR` when dry4clj stops on an alias-qualified auto-resolved keyword such as `::str/ok`, which the pinned dry4clj commit cannot read, and keeps the step advisory. It said that dry4clj always exits 0.
+- `/cljs-new` and `/cljs-upgrade` read the latest ClojureScript release from Maven Central's `maven-metadata.xml`. The `search.maven.org` index they queried reported 1.12.42 on 2026-10-24, when 1.12.145 was current, so `/cljs-new` pinned an old release and `/cljs-upgrade` could replace a newer version with it. `/cljs-upgrade` also stops when the fetched version is older than the current one.
+
 ## [0.1.17] - 2026-10-24
 
 ### Fixed

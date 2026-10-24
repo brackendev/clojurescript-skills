@@ -8,7 +8,7 @@ disable-model-invocation: true
 
 # Scaffold a ClojureScript Project
 
-Create a new ClojureScript project that uses [`cljs.main`](https://clojurescript.org/guides/quick-start) as its build and REPL entry point. The scaffold follows the official ClojureScript Quick Start layout and adds an `:test` alias, a `:cljfmt` alias, and clj-kondo configuration. See `CONVENTIONS.md` in the repo root for the argument grammar this skill follows.
+Create a new ClojureScript project that uses [`cljs.main`](https://clojurescript.org/guides/quick-start) as its build and REPL entry point. The scaffold follows the official ClojureScript Quick Start layout and adds an `:test` alias, a `:cljfmt` alias, and clj-kondo configuration. See the package's [CONVENTIONS.md](https://github.com/brackendev/clojurescript-skills/blob/master/CONVENTIONS.md) for the argument grammar this skill follows.
 
 ## Arguments
 
@@ -17,7 +17,7 @@ Create a new ClojureScript project that uses [`cljs.main`](https://clojurescript
 | `<project-name>`  | Required. Use hyphens (for example, `hello-world`); the skill maps to underscores for file paths (`hello_world/`) and keeps hyphens in namespace symbols (`hello-world.core`). |
 | (no argument)     | Prompt the operator for a project name.                                      |
 
-This skill is exempt from the `all` and `<path>` rows of the standard scope vocabulary because scaffolding has no useful default scope. See `CONVENTIONS.md` for the standard.
+This skill is exempt from the `all` and `<path>` rows of the standard scope vocabulary because scaffolding has no useful default scope. The package's [CONVENTIONS.md](https://github.com/brackendev/clojurescript-skills/blob/master/CONVENTIONS.md) defines the standard.
 
 ## Mutation
 
@@ -53,9 +53,11 @@ Fetch the latest released version from Maven Central:
 
 ```bash
 curl -sSL -A 'Mozilla/5.0' \
-  "https://search.maven.org/solrsearch/select?q=g:%22org.clojure%22+AND+a:%22clojurescript%22&rows=1&core=gav" \
-  | python3 -c "import json,sys; print(json.load(sys.stdin)['response']['docs'][0]['v'])"
+  'https://repo1.maven.org/maven2/org/clojure/clojurescript/maven-metadata.xml' \
+  | python3 -c "import re,sys; versions=re.findall(r'<version>([^<]+)</version>', sys.stdin.read()); print([v for v in versions if not re.search(r'alpha|beta|rc|snapshot', v, re.I)][-1])"
 ```
+
+The command prints the newest stable version in Maven Central's metadata. Do not use the `search.maven.org` search index instead: it can lag many releases behind Maven Central.
 
 If the network call fails, fall back to the version named in the [Quick Start](https://clojurescript.org/guides/quick-start) (currently `1.12.145`) and warn the user that the value may be stale.
 
@@ -82,8 +84,14 @@ Create `<project-name>/deps.edn`:
                           "--optimizations" "advanced"
                           "--compile" "<namespace>.core"]}
   :cljfmt  {:extra-deps  {dev.weavejester/cljfmt {:mvn/version "0.16.6"}}
-            :main-opts   ["-m" "cljfmt.main"]}}}
+            :main-opts   ["-m" "cljfmt.main"]}
+  :dry4clj {:extra-deps  {io.github.unclebob/dry4clj
+                          {:git/url "https://github.com/unclebob/dry4clj.git"
+                           :git/sha "5994ef2bcaaae8d12bcd0afb4f091ae09083228c"}}
+            :main-opts   ["-m" "dry4clj.core"]}}}
 ```
+
+The fixed versions above were current on 2026-10-24. Step 2 fetches the ClojureScript version at run time. `dry4clj` is not published to Clojars, so the `:dry4clj` alias uses a Git coordinate pinned to a commit. `/cljs-fix` uses it for its duplicate-form step.
 
 Where `<namespace>` matches the project name with hyphens (e.g., `hello-world` for project `hello-world`).
 

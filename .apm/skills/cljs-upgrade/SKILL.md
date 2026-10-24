@@ -8,7 +8,7 @@ disable-model-invocation: true
 
 # Upgrade ClojureScript
 
-Upgrade the `org.clojure/clojurescript` dependency in `deps.edn` to the latest released version on Maven Central and verify the project still compiles. See `CONVENTIONS.md` in the repo root for the argument grammar this skill follows.
+Upgrade the `org.clojure/clojurescript` dependency in `deps.edn` to the latest released version on Maven Central and verify the project still compiles. See the package's [CONVENTIONS.md](https://github.com/brackendev/clojurescript-skills/blob/master/CONVENTIONS.md) for the argument grammar this skill follows.
 
 ## Arguments
 
@@ -42,9 +42,11 @@ Query Maven Central for the latest release:
 
 ```bash
 curl -sSL -A 'Mozilla/5.0' \
-  "https://search.maven.org/solrsearch/select?q=g:%22org.clojure%22+AND+a:%22clojurescript%22&rows=1&core=gav" \
-  | python3 -c "import json,sys; print(json.load(sys.stdin)['response']['docs'][0]['v'])"
+  'https://repo1.maven.org/maven2/org/clojure/clojurescript/maven-metadata.xml' \
+  | python3 -c "import re,sys; versions=re.findall(r'<version>([^<]+)</version>', sys.stdin.read()); print([v for v in versions if not re.search(r'alpha|beta|rc|snapshot', v, re.I)][-1])"
 ```
+
+The command prints the newest stable version in Maven Central's metadata. Do not use the `search.maven.org` search index instead: it can lag many releases behind Maven Central.
 
 If the network call fails, ask the user for the target version rather than guessing. Do not invent a version number.
 
@@ -58,7 +60,7 @@ ClojureScript upgrade report:
 
 ### 3. Compare and Update
 
-If the latest version matches the current version, report "Already at the latest version" and stop.
+If the latest version matches the current version, report "Already at the latest version" and stop. If it is older than the current version (compare the dot-separated numbers in order), report both versions and stop without writing. Never downgrade the dependency.
 
 Otherwise, update the `:mvn/version` value in `deps.edn` to the latest version. Preserve formatting and surrounding content.
 
@@ -99,7 +101,6 @@ ClojureScript upgraded:
 
 ## Gotchas
 
-- Maven Central's `solrsearch` endpoint occasionally returns no rows when the index is being refreshed. Re-run the query if the response has zero results before falling back to asking the user.
-- Pre-release versions appear in the search results with suffixes like `-rc1` or `-alpha1`. The `&rows=1` query returns the most recent regardless of stability. Confirm with the user before applying a non-stable version.
+- The metadata file lists every published version in publish order, and the command skips names that contain `alpha`, `beta`, `rc`, or `snapshot`. Apply a prerelease only when the user names one.
 - Some projects pin ClojureScript via a Git SHA (`{:git/url "https://github.com/clojure/clojurescript" :sha "..."}`) rather than `:mvn/version`. This skill only handles the `:mvn/version` path; if a Git dependency is present, stop and tell the user.
 - ClojureScript 1.12.42 and later require Java 21. When the upgrade crosses that version, check `java -version` before compiling. On an older JDK the compile step fails and the skill reverts the version, so report the Java requirement instead of a generic compile failure.

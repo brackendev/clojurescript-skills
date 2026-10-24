@@ -5,16 +5,16 @@ description: >-
   (duplicate-form) steps. The format step writes by default. Use when asked to
   lint, format, test, or check a ClojureScript project (shadow-cljs.edn,
   figwheel-main.edn, or cljs.main), to fix clj-kondo warnings or cljfmt
-  formatting in .cljs files, or to verify an :advanced build. For Fulcro
-  projects, prefer /fulcro-fix when installed. Use --report to replace the
-  formatting write with cljfmt check.
+  formatting in .cljs files, or to verify an :advanced build. For Electric or
+  Fulcro projects, prefer /electric-fix or /fulcro-fix when installed. Use
+  --report to replace the formatting write with cljfmt check.
 argument-hint: "[lint|format|test|advanced|dry] [--report] [all]"
 user-invocable: true
 ---
 
 # ClojureScript Fix
 
-Run lint, format, test, advanced-compilation, and duplicate-form checks on ClojureScript source files. The `format` step writes by default; `lint`, `test`, `advanced`, and `dry` are pure-read of source. See `CONVENTIONS.md` in the repo root for the argument grammar this skill follows.
+Run lint, format, test, advanced-compilation, and duplicate-form checks on ClojureScript source files. The `format` step writes by default; `lint`, `test`, `advanced`, and `dry` are pure-read of source. See the package's [CONVENTIONS.md](https://github.com/brackendev/clojurescript-skills/blob/master/CONVENTIONS.md) for the argument grammar this skill follows.
 
 ## Arguments
 
@@ -39,7 +39,7 @@ Only the `format` step writes source. It runs `clj -M:cljfmt fix` by default, re
 
 The `advanced` step writes generated JavaScript under `out/` (or the project's compiler `:output-dir`), which is a build artifact, not source. The `lint`, `test`, and `dry` steps are pure-read regardless of `--report`.
 
-This skill excludes vendored, generated, and dependency-locked paths from the file set it walks. The filter combines `.gitignore` matches and a hardcoded floor (`node_modules/`, `vendor/`, `third_party/`, `.bundle/`, `target/`, `build/`, `dist/`, `out/`, `.shadow-cljs/`, `cljd-out/`, `*.lock`, `package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`, `Gemfile.lock`, `Cargo.lock`, `poetry.lock`, `composer.lock`). The `advanced` step's writes to the compiler `:output-dir` are build artifacts produced by the compiler itself and are outside the source-mutation scope of the rule. Naming a vendored source path directly through `<path>` or `<glob>` bypasses the filter for that target. When the filter excludes any path, add a single "skipped N vendored or generated paths" line to the report. Under `--report`, list every skipped path. The full policy is Rule 4 in CONVENTIONS.md.
+This skill excludes vendored, generated, and dependency-locked paths from the file set it walks. The filter combines `.gitignore` matches and a hardcoded floor (`node_modules/`, `vendor/`, `third_party/`, `.bundle/`, `target/`, `build/`, `dist/`, `out/`, `.shadow-cljs/`, `cljd-out/`, `*.lock`, `package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`, `Gemfile.lock`, `Cargo.lock`, `poetry.lock`, `composer.lock`). The `advanced` step's writes to the compiler `:output-dir` are build artifacts produced by the compiler itself and are outside the source-mutation scope of the rule. Naming a vendored source path directly through `<path>` or `<glob>` bypasses the filter for that target. When the filter excludes any path, add a single "skipped N vendored or generated paths" line to the report. Under `--report`, list every skipped path. The full policy is Rule 4 in the package's [CONVENTIONS.md](https://github.com/brackendev/clojurescript-skills/blob/master/CONVENTIONS.md).
 
 ## Steps
 
@@ -120,9 +120,17 @@ Scan for duplicate top-level forms with [dry4clj](https://github.com/unclebob/dr
 Determine the project's production source directories from its build configuration instead of assuming a directory name:
 
 - `deps.edn`: the top-level `:paths` (the `:dry4clj` alias is defined here). Tests usually live under a separate alias's `:extra-paths`, so scanning `:paths` excludes them.
-- `shadow-cljs.edn`: `:source-paths`.
+- `shadow-cljs.edn`: `:source-paths`, unless `shadow-cljs.edn` sets `:deps`. With `:deps`, shadow-cljs takes its source paths from `deps.edn`, so use the `deps.edn` paths instead.
 
 Scan the production source paths only and exclude test paths. If no configuration declares source paths, scan the source directories that exist in the repository, excluding any test directory. Do not assume `src`.
+
+Check that `deps.edn` defines a `:dry4clj` alias before running the scan. When it does not, report `SKIP` and show the alias to add under `:aliases`:
+
+```clojure
+:dry4clj {:extra-deps {io.github.unclebob/dry4clj {:git/url "https://github.com/unclebob/dry4clj.git"
+                                                    :git/sha "5994ef2bcaaae8d12bcd0afb4f091ae09083228c"}}
+           :main-opts  ["-m" "dry4clj.core"]}
+```
 
 Run dry4clj with EDN output over the resolved paths:
 
@@ -132,14 +140,14 @@ clj -M:dry4clj --edn <source-paths...>
 
 Do not pass `--threshold`, `--min-lines`, or `--min-nodes`. Scoping to production source removes the dominant noise, which is repeated test scaffolding; tightening the score or size knobs either hides real matches or has no effect on exact-structure duplicates.
 
-dry4clj always exits 0, and the EDN output never prints a clean-state message, so do not use the exit code or any text match as the signal. Parse the EDN map `{:candidates [...]}` and classify the result:
+dry4clj exits 0 after a completed scan, and the EDN output never prints a clean-state message, so do not use the exit code or any text match to detect duplicates. A non-zero exit means the scan itself failed (for example, a file the reader cannot parse) and is reported as `ERROR`. Parse the EDN map `{:candidates [...]}` and classify the result:
 
 | Result   | Condition                                                                                                                  |
 |----------|----------------------------------------------------------------------------------------------------------------------------|
 | `PASS`   | `:candidates` is empty.                                                                                                     |
 | `REVIEW` | `:candidates` has one or more entries. List them and continue.                                                             |
-| `ERROR`  | The command cannot run or its output cannot be parsed (for example, the `:dry4clj` alias is missing). Report the cause; do not report `PASS`. |
-| `SKIP`   | No production source path can be identified.                                                                               |
+| `ERROR`  | The command fails or its output cannot be parsed. Report the cause, and do not report `PASS`. |
+| `SKIP`   | No production source path can be identified, or `deps.edn` defines no `:dry4clj` alias. |
 
 For `REVIEW`, sort candidates by exact matches first (`:score` equal to `1.0`), then by descending `min(:left-nodes, :right-nodes)`, then by descending `:score`. Report the scanned source paths, the candidate count, and the highest-priority candidates with their score, node counts, and both file ranges. Note that each candidate needs source inspection before extraction, and that test directories were excluded because repeated test scaffolding is often intentional.
 
@@ -165,3 +173,4 @@ If `--report` was passed, append `(report mode: format checked, not written)` af
 - clj-kondo versions before 2026.05.25 do not recognize `cljs.core/await` and report `Unresolved symbol: await` in `^:async` functions. Treat that lint failure as an outdated clj-kondo, upgrade it, and re-run the lint step. Do not suppress the symbol in `.clj-kondo/config.edn`.
 - `clj-kondo` lints `.cljs` and `.cljc` files but does not run the ClojureScript compiler. Type-related failures (`Cannot infer target type`, missing externs) only surface in the `advanced` step.
 - The `advanced` step is slow on first run (the Google Closure Compiler does whole-program analysis). Caching is automatic across runs.
+- dry4clj reads source without resolving namespace aliases, so an alias-qualified auto-resolved keyword such as `::str/ok` stops the dry scan with "Invalid token" and a non-zero exit. Plain auto-resolved keywords such as `::ok` read correctly. Report the file and the error as `ERROR`, keep the step advisory, and do not rewrite source to work around the reader.

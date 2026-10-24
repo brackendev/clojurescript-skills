@@ -159,7 +159,12 @@ The official toolchain is `cljs.main`. Two community tools are widely used and a
 | [shadow-cljs](https://github.com/thheller/shadow-cljs) | Tight npm integration via `shadow-cljs.edn`, hot reload, multi-target builds, npm-style invocation (`npx shadow-cljs watch app`). | [shadow-cljs User's Guide](https://shadow-cljs.github.io/docs/UsersGuide.html) |
 | [figwheel-main](https://github.com/bhauman/figwheel-main) | Hot reload with a Clojure CLI integration, configured via `figwheel-main.edn` and `:fig` aliases. | [figwheel-main docs](https://figwheel.org/) |
 
-When working in a shadow-cljs or figwheel-main project, defer to that project's tooling for build commands and REPL connection. The host-neutral REPL principle (start a REPL before changing larger code paths) still applies.
+When working in a shadow-cljs or figwheel-main project, defer to that project's tooling for build commands and REPL connection. The host-neutral REPL guidance in the `clojure` skill still applies.
+
+Two shadow-cljs facts affect these projects:
+
+- **shadow-cljs 3.x requires Java 21.** Release 3.0.0 (2025-04-24) raised the minimum to Java 21 when it updated the Closure Compiler. Check `java -version` before building a shadow-cljs 3 project.
+- **`:deps` moves source paths and dependencies to `deps.edn`.** When `shadow-cljs.edn` sets `:deps` (`:deps true` or `:deps {:aliases [...]}`), shadow-cljs resolves its dependencies and source paths through `deps.edn` instead of its own `:dependencies` and `:source-paths`. Put the source paths in `deps.edn` `:paths` (or an alias's `:extra-paths`), list the aliases in `:deps {:aliases [...]}`, and add `thheller/shadow-cljs` to `deps.edn` yourself.
 
 ## Testing
 
