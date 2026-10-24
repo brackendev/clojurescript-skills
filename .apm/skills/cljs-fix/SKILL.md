@@ -39,7 +39,7 @@ Only the `format` step writes source. It runs `clj -M:cljfmt fix` by default, re
 
 The `advanced` step writes generated JavaScript under `out/` (or the project's compiler `:output-dir`), which is a build artifact, not source. The `lint`, `test`, and `dry` steps are pure-read regardless of `--report`.
 
-This skill excludes vendored, generated, and dependency-locked paths from the file set it walks. The filter combines `.gitignore` matches and a hardcoded floor (`node_modules/`, `vendor/`, `third_party/`, `.bundle/`, `target/`, `build/`, `dist/`, `out/`, `.shadow-cljs/`, `cljd-out/`, `*.lock`, `package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`, `Gemfile.lock`, `Cargo.lock`, `poetry.lock`, `composer.lock`). The `advanced` step's writes to the compiler `:output-dir` are build artifacts produced by the compiler itself and are outside the source-mutation scope of the rule. Naming a vendored source path directly through `<path>` or `<glob>` bypasses the filter for that target. The full policy is Rule 4 in CONVENTIONS.md.
+This skill excludes vendored, generated, and dependency-locked paths from the file set it walks. The filter combines `.gitignore` matches and a hardcoded floor (`node_modules/`, `vendor/`, `third_party/`, `.bundle/`, `target/`, `build/`, `dist/`, `out/`, `.shadow-cljs/`, `cljd-out/`, `*.lock`, `package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`, `Gemfile.lock`, `Cargo.lock`, `poetry.lock`, `composer.lock`). The `advanced` step's writes to the compiler `:output-dir` are build artifacts produced by the compiler itself and are outside the source-mutation scope of the rule. Naming a vendored source path directly through `<path>` or `<glob>` bypasses the filter for that target. When the filter excludes any path, add a single "skipped N vendored or generated paths" line to the report. Under `--report`, list every skipped path. The full policy is Rule 4 in CONVENTIONS.md.
 
 ## Steps
 
@@ -109,7 +109,7 @@ If the project defines a `:build` alias for the production build, prefer it:
 clj -M:build
 ```
 
-Report fail if exit code is non-zero, or if the output contains `Cannot infer target type in expression` warnings when `*warn-on-infer*` is set in the project. Those inference failures predict property renaming under advanced compilation and must be resolved before release.
+Report fail if exit code is non-zero, or if the output contains `Cannot infer target type in expression` warnings when `*warn-on-infer*` is set in the project. Those inference failures predict property renaming under advanced compilation and must be resolved before release. The step catches them only when the project sets `(set! *warn-on-infer* true)` in each namespace and `:infer-externs true` in its compiler options. Without these, advanced compilation can rename property names silently.
 
 When the project has no advanced build alias and the namespace cannot be determined, skip this step and record `advanced: SKIPPED`.
 
@@ -158,12 +158,10 @@ ClojureScript Fix Results:
   Dry:      PASS/REVIEW/ERROR/SKIPPED
 ```
 
-If `--report` was passed, append `(report mode: format checked, not written)` after the summary. If a lint, format, test, or advanced step fails, stop and report the failure; do not continue to subsequent steps. The dry step is advisory: it never fails the run and never halts the pipeline.
+If `--report` was passed, append `(report mode: format checked, not written)` after the summary. If a lint, format, test, or advanced step fails, stop and report the failure; do not continue to subsequent steps.
 
 ## Gotchas
 
 - clj-kondo versions before 2026.05.25 do not recognize `cljs.core/await` and report `Unresolved symbol: await` in `^:async` functions. Treat that lint failure as an outdated clj-kondo, upgrade it, and re-run the lint step. Do not suppress the symbol in `.clj-kondo/config.edn`.
 - `clj-kondo` lints `.cljs` and `.cljc` files but does not run the ClojureScript compiler. Type-related failures (`Cannot infer target type`, missing externs) only surface in the `advanced` step.
-- The `test` step assumes the project compiles its test suite for Node and runs through `cljs.main`. shadow-cljs and figwheel-main projects need their own command; detect the toolchain before invoking.
 - The `advanced` step is slow on first run (the Google Closure Compiler does whole-program analysis). Caching is automatic across runs.
-- Set `(set! *warn-on-infer* true)` per namespace and `:infer-externs true` in the project's compiler options so the `advanced` step catches inference failures. Without these, advanced compilation can silently rename property names.

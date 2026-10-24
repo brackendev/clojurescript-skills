@@ -134,7 +134,7 @@ The skill writes when the `format` step runs without `--report`. With `--report`
 /cljs-upgrade all            # synonym for (no argument)
 ```
 
-The default rewrites `:mvn/version` for `org.clojure/clojurescript` in `deps.edn` and verifies with an advanced compile. With `--report`, the skill prints the current `:mvn/version`, the latest released version on Maven Central, and the would-be diff. No writes. No compile.
+The default rewrites `:mvn/version` for `org.clojure/clojurescript` in `deps.edn` and verifies with an advanced compile. With `--report`, the skill prints the current `:mvn/version` and the latest released version on Maven Central. No writes. No compile.
 
 ### `/cljs-smells-fix` -- mutating skill with `--report` (placeholder)
 

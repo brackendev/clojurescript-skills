@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.1.17] - 2026-10-24
+
+### Fixed
+
+- `/cljs-upgrade` stops on a shadow-cljs project whose `deps.edn` does not name `org.clojure/clojurescript` and tells the user to upgrade `thheller/shadow-cljs`, because each shadow-cljs release is tested with one ClojureScript version. It no longer suggests editing `shadow-cljs.edn`.
+- The `clojurescript` skill says that `^boolean` is the only type hint that changes generated code, matching its Key Rules and the upstream "Differences from Clojure" page.
+- `CONVENTIONS.md` describes the `/cljs-upgrade --report` output that the skill prints: the current and latest versions, with no diff.
+- `/cljs-fix` adds a "skipped N vendored or generated paths" line to the report when the vendored-path filter excludes any path, and list those paths under `--report`, as Rule 4 of `CONVENTIONS.md` requires.
+
+### Changed
+
+- The `clojurescript` skill states each rule once. The Gotchas for `:advanced` property renaming, `aget` on objects, `(= 0.0 0)`, macro and function name sharing, and `await` inside a nested `fn` are now part of the sections they repeated, with their symptoms and examples. `/cljs-fix`, `/cljs-new`, `/cljs-smells-fix`, and `clojurescript-lenses` follow the same pattern.
+
 ## [0.1.16] - 2026-10-24
 
 ### Removed

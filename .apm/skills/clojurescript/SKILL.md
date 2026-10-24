@@ -124,7 +124,7 @@ ClojureScript 1.12.116 added `:refer-global` and Clojure 1.12 method value synta
 
 ### Native object access
 
-Prefer `goog.object/get` and `goog.object/set` for object property access when the property name is dynamic, externs hygiene matters, or advanced optimization is on. Reserve `aget` and `aset` for arrays:
+Prefer `goog.object/get` and `goog.object/set` for object property access when the property name is dynamic, externs hygiene matters, or advanced optimization is on. Reserve `aget` and `aset` for arrays. `aget` is a JavaScript array index, not an object lookup. On an object it works without optimization but breaks under `:advanced`, because the index becomes a property name that the renamer may have changed:
 
 ```clojure
 ;; good: dynamic property name, advanced-compilation safe
@@ -185,7 +185,7 @@ Since ClojureScript 1.12.145, `^:async` makes the compiler emit a JavaScript asy
 
 - Put `^:async` on the function name (`(defn ^:async f ...)`) or on the `fn` symbol (`(^:async fn [x] ...)`). Metadata on the argument vector or on the whole `(fn ...)` form is ignored.
 - Every arity of a multi-arity function is async. Sync and async arities cannot be mixed.
-- A function created inside an async function is not async unless it carries its own `^:async`. Calling `await` inside a plain `fn` passed to `map` fails to compile with "await can only be used in async contexts". Use `Promise/all` over a vector of Promises instead.
+- `await` belongs to the innermost function, not to the enclosing `^:async` function. A function created inside an async function is not async unless it carries its own `^:async`. `(map (fn [url] (await (fetch url))) urls)` inside an async function fails to compile with "await can only be used in async contexts". Marking the inner `fn` `^:async` compiles but returns a seq of Promises. Collect the Promises with `mapv` and `await` a single `Promise/all`.
 - There is no top-level `await`.
 - `await` here is a `cljs.core` macro and is unrelated to `clojure.core/await` for JVM agents.
 
@@ -259,7 +259,7 @@ When only macros need importing across hosts, use `:refer-macros` from within a 
                :cljs [my-app.lib :refer [some-fn] :refer-macros [some-macro]])))
 ```
 
-A macro and a function can have the same name in ClojureScript; this is unlike JVM Clojure where the macro name shadows the function in its namespace.
+A macro and a function can have the same name in ClojureScript, and each is reachable from its own compilation stage. In JVM Clojure the macro name shadows the function in its namespace, so check for name collisions when porting a JVM namespace whose macro shadowed an underlying function.
 
 ## Namespaces
 
@@ -284,18 +284,14 @@ A macro and a function can have the same name in ClojureScript; this is unlike J
 
 ## Type Hints and Externs
 
-The compiler uses two type-hint forms with runtime significance on ClojureScript:
+Two type-hint forms matter on ClojureScript. `^boolean` is the only hint that changes the generated code, and `^js` drives externs inference:
 
 | Hint | Purpose |
 |------|---------|
-| `^boolean` | Avoid the checked-`if` runtime that handles JS's wider falsy set. |
+| `^boolean` | Avoid the checked-`if` runtime that handles JS's wider falsy set. See "Truthiness and Boolean Handling" below. |
 | `^js`, `^js/Foo.Bar` | Mark a value as foreign JavaScript so externs inference does not rename its property names under advanced compilation. |
 
 ```clojure
-;; good: avoid checked-if for a hot predicate
-(defn active? ^boolean [user]
-  (true? (:active? user)))
-
 ;; good: hint a foreign JS instance so .baz is not renamed
 (defn wrap-baz [^js/Foo.Bar x]
   (.baz x))
@@ -303,7 +299,7 @@ The compiler uses two type-hint forms with runtime significance on ClojureScript
 
 ### Externs inference
 
-For projects that target advanced compilation, enable externs inference. The compiler will warn on every interop call where it cannot determine the target type and emit an inferred externs file when types are known:
+Under `:advanced` optimizations the Google Closure Compiler renames every property name it does not see in an externs file. Code like `(.-userName user)` on a value the compiler cannot infer becomes `(.x user)` in the output, and the property no longer matches the JavaScript object the rest of the system produces, so code that works in development breaks in production. For projects that target advanced compilation, enable externs inference and add `^js/Foo.Bar` hints until the warnings clear. The compiler will warn on every interop call where it cannot determine the target type and emit an inferred externs file when types are known:
 
 ```edn
 ;; build config (compiler options)
@@ -315,7 +311,7 @@ For projects that target advanced compilation, enable externs inference. The com
 (set! *warn-on-infer* true)
 ```
 
-Without `^js` hints, calls like `(.baz x)` on a parameter `x` of unknown type will produce a `Cannot infer target type` warning at compile time. With `^js/Foo.Bar x` the compiler accepts the call and writes the property into the inferred externs file. Manual externs (`.js` files with JSDoc annotations) remain available for cases that inference cannot handle.
+Without `^js` hints, calls like `(.baz x)` on a parameter `x` of unknown type will produce a `Cannot infer target type` warning at compile time. With `^js/Foo.Bar x` the compiler accepts the call and writes the property into the inferred externs file. Add manual externs (`.js` files with JSDoc annotations) only for what inference cannot reach.
 
 Externs inference requires ClojureScript 1.10.238 or later.
 
@@ -328,6 +324,8 @@ There is no `Ratio`, `BigDecimal`, or `BigInt` literal in ClojureScript. Numbers
 (= 0.0 0)    ;; ⇒ true   (JVM Clojure: false)
 (= 1.0 1)    ;; ⇒ true   (JVM Clojure: false)
 ```
+
+Code that relies on JVM Clojure's distinction between `0` and `0.0` behaves differently here. The same applies to `1.0`, `42.0`, and every other float with an integer value.
 
 For arbitrary-precision integer work, use `js/BigInt` directly (and remember it does not interoperate with regular JS numbers via `=` or arithmetic without conversion).
 
@@ -370,7 +368,7 @@ Vars are not reified at runtime on ClojureScript. The compiler emits compile-tim
 - `(var foo)` and `#'foo` return compile-time `Var` instances; runtime introspection that JVM tooling relies on is limited.
 - `def` produces an ordinary JavaScript variable and evaluates to its value, not to the var.
 - `:private` metadata is not enforced by the compiler.
-- `with-redefs` and `intern` are not available in the same shape as JVM Clojure. Prefer passing dependencies as function arguments.
+- `with-redefs` and `intern` are not available in the same shape as JVM Clojure. Prefer passing dependencies as function arguments, or use protocols at boundaries with test doubles.
 
 ## Reader Conditionals
 
@@ -455,7 +453,7 @@ Since 1.12.145, `deftest ^:async` defines a test whose body can `await` Promises
 
 On older compilers, use `cljs.test/async` with a `done` callback.
 
-`with-redefs` is not the same as on the JVM (vars are not reified). Prefer passing dependencies as arguments, or use protocols at boundaries with test doubles.
+For test seams, see the `with-redefs` entry under "Vars" above.
 
 ## Project Workflow
 
@@ -463,25 +461,9 @@ CLI commands (`cljs.main`), project layout, `deps.edn` configuration for Clojure
 
 ## Gotchas
 
-### `:advanced` compilation renames property names
-
-Under `:advanced` optimizations the Google Closure Compiler renames every property name it does not see in an externs file. Code like `(.-userName user)` on a value the compiler cannot infer becomes `(.x user)` in the output, and the property no longer matches the JavaScript object the rest of the system produces. Symptoms: code works in development, breaks in production. Fix: enable `:infer-externs true`, set `*warn-on-infer*` per namespace, and add `^js/Foo.Bar` hints until the warnings clear. Add manual externs only for what inference cannot reach.
-
-### `aget` on objects breaks under advanced compilation
-
-`aget` is a JavaScript array index, not an object lookup. Using `aget` on an object happens to work without optimization but breaks under `:advanced` because the index becomes a property name that the renamer may have changed. Use `goog.object/get` for objects and reserve `aget` for arrays.
-
-### `(= 0.0 0)` returns `true`
-
-JS numerics use one IEEE 754 double for both integer and float. Equality on ClojureScript reflects that. Code that relies on JVM Clojure's distinction between `0` and `0.0` will behave differently here. The same caveat applies to `1.0`, `42.0`, etc.
-
 ### `*out*` and `*err*` are not implemented
 
 Use `(.log js/console ...)` or `(println ...)` directly. Bindings around `*out*` that work on the JVM do nothing on ClojureScript.
-
-### Macro and function name sharing
-
-Unlike on the JVM, a macro and a function may share a name in ClojureScript. This is occasionally a footgun when porting a JVM namespace whose macro shadowed an underlying function; on ClojureScript both names are accessible from their respective stages.
 
 ### `cljs.reader` for `read` and `read-string`
 
@@ -494,10 +476,6 @@ Setting `*assert*` to false at runtime does not work on ClojureScript. Use the `
 ### New interop syntax requires a recent compiler
 
 `:refer-global`, `:require-global`, and method values (`String/.toUpperCase`, `Date/new`) need ClojureScript 1.12.116 or later. `^:async` and `await` need 1.12.145 or later. Check the project's `org.clojure/clojurescript` version, or the version bundled with its shadow-cljs release, before writing them. On older compilers the `ns` form fails to parse or `await` resolves to nothing.
-
-### `await` inside a nested `fn`
-
-`await` belongs to the innermost function, not to the enclosing `^:async` function. `(map (fn [url] (await (fetch url))) urls)` inside an async function fails to compile with "await can only be used in async contexts". Marking the inner `fn` `^:async` compiles but returns a seq of Promises. Collect the Promises with `mapv` and `await` a single `Promise/all`.
 
 ### Older clj-kondo flags `await`
 

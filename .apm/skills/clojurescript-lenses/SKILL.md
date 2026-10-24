@@ -32,10 +32,10 @@ When the [code-lenses](https://github.com/brackendev/code-lenses) plugin is acti
 
 ## A Philosophy of Software Design
 
-- Namespaces are still modules. The `clojure-lenses` rule applies: small public API, private helpers via `defn-`. ClojureScript adds the externs-inference angle: a deep module hides interop ugliness so the public API does not leak `js/` prefixes or property-renaming hazards.
+- Namespaces are still modules. The `clojure-lenses` rule applies: small public API, private helpers via `defn-`.
 - The interop boundary is a module boundary. Convert at the edges with `js->clj` and `clj->js`; inside the module, operate on Clojure data. Callers should not see `goog.object/get` or `aget` in the public API of a namespace whose job is application logic.
 - Hide framework-specific lifecycle behind namespace boundaries. Reagent components, re-frame events, and React hooks each have their own conventions; the namespace that owns a feature should expose Clojure data in and Clojure data out, not Reagent atoms or React refs.
-- Information hiding includes externs. A namespace that wraps a JS library should hide the externs and `^js` hints from callers. Downstream code receives Clojure values typed appropriately.
+- Information hiding includes externs. A namespace that wraps a JS library should hide the externs, `^js` hints, and `js/` prefixes from callers, so its public API does not leak property-renaming hazards. Downstream code receives Clojure values typed appropriately.
 - `cljs.spec.alpha` and Malli work at boundaries the same way they do on the JVM. Use them at HTTP, WebSocket, and `localStorage` boundaries to parse raw input into domain maps.
 
 ## Tidy First
@@ -70,7 +70,7 @@ When the [code-lenses](https://github.com/brackendev/code-lenses) plugin is acti
 
 ## Legacy Code
 
-- Seams in ClojureScript: vars (rebindable in tests with `with-redefs`, but vars are not reified at runtime, so the seam is shallower than on the JVM), higher-order functions (pass a function instead of hardcoding a call), protocols at boundaries, and system maps (Component / Integrant / Mount work on ClojureScript as well as on the JVM).
+- Seams in ClojureScript: vars, higher-order functions (pass a function instead of hardcoding a call), protocols at boundaries, and system maps (Component / Integrant / Mount work on ClojureScript as well as on the JVM). The var seam is shallower than on the JVM. Tests can rebind a var with `with-redefs`, but vars are not reified at runtime, so the rebind reaches only code that resolves the var when it runs. Code that captured the original value at definition time keeps using it. Prefer dependency injection.
 - Extract Interface translates to extracting a protocol or, more often, a function parameter. ClojureScript protocols are useful when the same shape must work on plain JS objects and on Clojure values; otherwise function parameters suffice.
 - Parameterize Constructor translates to passing a deps map or system key. Functions that touch JS globals (`js/window`, `js/document`, `js/fetch`) should receive those through arguments so tests can substitute.
 - Sprout method/class translates to sprouting a new function or namespace. New behavior goes in a new `defn` called from the legacy code, not into the legacy `defn` itself.
@@ -82,7 +82,6 @@ When the [code-lenses](https://github.com/brackendev/code-lenses) plugin is acti
 
 ## Gotchas
 
-- `with-redefs` looks like a seam, but vars on ClojureScript are not reified at runtime in the same way; the rebind only affects code that resolves the var dynamically. Code that closes over the original value at definition time will keep using the original. Prefer dependency injection.
 - Reagent reactions and re-frame subscriptions look like pure functions but participate in a reactive graph. Refactoring that changes when a subscription evaluates can break rendering even if the final output is unchanged.
 - React hooks (used through Helix, UIx, or interop) have ordering requirements. "Extract helper" that pulls a hook call into a conditional branch breaks the hook contract. Mention this whenever a refactor touches a hook-bearing function.
 - Source maps cover stack traces but not `console.log` of compiled code. When debugging interop, log Clojure values before they hit `clj->js`, not after.

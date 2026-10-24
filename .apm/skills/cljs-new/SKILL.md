@@ -45,7 +45,7 @@ java -version
 
 Use `$ARGUMENTS` as the project name. If empty, ask the user for a project name.
 
-The project name uses hyphens (for example, `hello-world`). File paths use underscores (for example, `hello_world/`). The namespace mirrors the project name (`hello-world.core`).
+The project name uses hyphens (for example, `hello-world`). File paths use underscores (for example, `hello_world/`). The namespace mirrors the project name (`hello-world.core`). A file path that does not match its namespace, such as `src/hello-world/core.cljs` for `(ns hello-world.core)`, fails at compile time with a "could not locate" error.
 
 ### 2. Resolve the Latest ClojureScript Version
 
@@ -226,7 +226,6 @@ Next steps:
 
 ## Gotchas
 
-- File names use underscores; namespace names use hyphens. `src/hello_world/core.cljs` corresponds to `(ns hello-world.core)`. Mismatches surface as "could not locate" errors at compile time.
 - `cljs.test/deftest`, `cljs.test/testing`, and `cljs.test/is` are macros. Because `cljs.test` loads its own macros, a plain `:refer [deftest is testing]` works as well as the `:refer-macros` form the scaffold uses.
 - Node REPL stack traces are only source-mapped if `npm install source-map-support` is run inside the project. Browser REPL source mapping is automatic.
 - The `:build` alias above produces an advanced-compiled bundle. Enable externs inference (`:infer-externs true` in the compiler options, `(set! *warn-on-infer* true)` per namespace) before relying on advanced builds; see the main `clojurescript` skill for details.

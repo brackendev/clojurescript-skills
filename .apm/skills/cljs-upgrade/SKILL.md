@@ -26,7 +26,7 @@ Mutates `deps.edn` by default, replacing the `:mvn/version` value under `org.clo
 
 ## Prerequisites
 
-Verify `deps.edn` exists in the current directory and contains an `org.clojure/clojurescript` dependency. If not, stop and tell the user.
+Verify `deps.edn` exists in the current directory and contains an `org.clojure/clojurescript` dependency. If not, stop and tell the user. When the project has a `shadow-cljs.edn` file and `deps.edn` does not name `org.clojure/clojurescript`, the ClojureScript version comes from the shadow-cljs release, which upstream tests against one set of `org.clojure/clojurescript` and Closure Compiler versions. Tell the user to upgrade `thheller/shadow-cljs` instead, and do not add or edit an `org.clojure/clojurescript` entry in `shadow-cljs.edn`.
 
 ## Steps
 
@@ -103,4 +103,3 @@ ClojureScript upgraded:
 - Pre-release versions appear in the search results with suffixes like `-rc1` or `-alpha1`. The `&rows=1` query returns the most recent regardless of stability. Confirm with the user before applying a non-stable version.
 - Some projects pin ClojureScript via a Git SHA (`{:git/url "https://github.com/clojure/clojurescript" :sha "..."}`) rather than `:mvn/version`. This skill only handles the `:mvn/version` path; if a Git dependency is present, stop and tell the user.
 - ClojureScript 1.12.42 and later require Java 21. When the upgrade crosses that version, check `java -version` before compiling. On an older JDK the compile step fails and the skill reverts the version, so report the Java requirement instead of a generic compile failure.
-- shadow-cljs projects often pin ClojureScript through `shadow-cljs.edn` rather than `deps.edn`. Detect `shadow-cljs.edn` and update there if `deps.edn` does not name `org.clojure/clojurescript`.

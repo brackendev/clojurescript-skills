@@ -80,19 +80,13 @@ Interactions in the browser REPL behave like any Clojure REPL:
 (hello/average 20 13)
 ```
 
-The browser REPL emits source-mapped stack traces automatically. The compiler must have run a build that produced source maps (the default with `--compile`).
-
 ### Node REPL
 
 ```bash
 clj -M -m cljs.main --repl-env node
 ```
 
-For source-mapped stack traces in Node, install the Node helper once per project:
-
-```bash
-npm install source-map-support
-```
+Stack traces in both REPLs map back to ClojureScript source as described in "Source Maps" below.
 
 ### Watch and incremental compile
 
@@ -100,7 +94,11 @@ npm install source-map-support
 
 ## Source Maps
 
-Source maps are emitted by default in development. In the browser, stack traces are mapped back to ClojureScript source. In Node, install `source-map-support` (npm) to enable the same behavior.
+Source maps are emitted by default in development, including by a `--compile` build. In the browser, including the browser REPL, stack traces are mapped back to ClojureScript source automatically. In Node, including the Node REPL, install the `source-map-support` npm package once per project to enable the same behavior:
+
+```bash
+npm install source-map-support
+```
 
 ## Advanced Compilation
 
@@ -108,7 +106,7 @@ Source maps are emitted by default in development. In the browser, stack traces 
 clj -M -m cljs.main --optimizations advanced -c <main-ns>
 ```
 
-The Google Closure Compiler aggressively renames property names that it does not see in an externs file. Enable externs inference and add `^js` / `^js/Foo.Bar` hints to silence inference warnings before promoting a build to advanced optimization. See the main `SKILL.md` for the externs inference workflow.
+Resolve every externs inference warning before promoting a build to advanced optimization. The main `SKILL.md` ("Type Hints and Externs") describes the property-renaming hazard and the externs inference workflow.
 
 ClojureScript 1.12.116 added two experimental compiler options for very small programs. `:lite-mode true` makes data literals use lighter copy-on-write collections, and `:elide-to-string true` removes the collection `toString` implementations so dead code elimination can drop the printer. Upstream describes them as useful only for simple programs: once a program has enough dependencies or uses enough of `cljs.core`, the size savings disappear. Do not enable them on an application build without measuring the output.
 
@@ -150,16 +148,7 @@ The string require form (`["react" :as react]`) is supported by shadow-cljs and 
 
 ### Script-tag globals
 
-Since ClojureScript 1.12.116, `:require-global` gives a namespace alias to a library that the page loads as a global through a `<script>` tag, with no npm or bundler configuration:
-
-```clojure
-(ns my-app.core
-  (:require-global [Idiomorph :as idio]))
-
-(idio/morph el new-html)
-```
-
-This suits pages with one or two JavaScript dependencies, such as hypermedia-style applications. Projects that already consume `node_modules` should keep their build tool's npm support.
+`:require-global` (ClojureScript 1.12.116 and later) aliases a library that the page loads as a global through a `<script>` tag, with no npm or bundler configuration. The main `SKILL.md` ("Referred globals and method values") gives the syntax. This suits pages with one or two JavaScript dependencies, such as hypermedia-style applications. Projects that already consume `node_modules` should keep their build tool's npm support.
 
 ## Community Alternatives
 

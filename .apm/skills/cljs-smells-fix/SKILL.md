@@ -70,4 +70,4 @@ A ClojureScript-specific smells catalog is in development. For now:
 To track progress, see https://github.com/brackendev/clojurescript-skills.
 ```
 
-Print the notice and stop. The skill has no analysis step yet, so running clj-kondo, the JVM catalog, or any edit would produce results outside this contract.
+The skill has no analysis step yet, so running clj-kondo, the JVM catalog, or any edit would produce results outside this contract.
