@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.1.19] - 2026-10-25
+
+### Changed
+
+- The Companion packages table describes biff-skills as covering Biff 2 conventions and deployment, because that package no longer scaffolds projects.
+
+### Removed
+
+- The `/cljs-new` scaffolding skill is removed. It wrote a fixed project layout with pinned versions, and the agent could not run it from a natural-language request. The `/cljs-fix` skill still shows the `:test` and `:dry4clj` alias shapes it expects.
+
 ## [0.1.18] - 2026-10-24
 
 ### Added

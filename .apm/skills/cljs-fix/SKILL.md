@@ -81,7 +81,7 @@ Run the ClojureScript test suite. The standard idiom is a Node test runner names
 clj -M:test && node out/test.js
 ```
 
-The `:test` alias compiles the test runner for the Node target into `out/test.js`. Example alias shape (created by `/cljs-new`):
+The `:test` alias compiles the test runner for the Node target into `out/test.js`. Example alias shape:
 
 ```clojure
 :test {:extra-paths ["test"]
