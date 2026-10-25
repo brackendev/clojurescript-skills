@@ -56,7 +56,7 @@ Use the same dot form Clojure uses for JVM constructors, but the class is reache
 
 ### Referred globals and method values
 
-ClojureScript 1.12.116 added `:refer-global` and Clojure 1.12 method value syntax. `:refer-global` lists the globals a namespace uses without the `js/` prefix and accepts `:rename`. Only one `:refer-global` clause is allowed per `ns` form. Once a global is referred, `Class/member` reaches its static members, `Class/new` is the constructor, and `Class/.method` is a function that calls the instance method on its first argument:
+`:refer-global` lists the globals a namespace uses without the `js/` prefix and accepts `:rename`, and ClojureScript supports the Clojure method value syntax. Only one `:refer-global` clause is allowed per `ns` form. A second one fails with "Only one :refer-global form is allowed per namespace definition". Once a global is referred, `Class/member` reaches its static members, `Class/new` is the constructor, and `Class/.method` is a function that calls the instance method on its first argument:
 
 ```clojure
 (ns my-app.core
@@ -68,7 +68,7 @@ ClojureScript 1.12.116 added `:refer-global` and Clojure 1.12 method value synta
 (mapv String/.toUpperCase ["foo" "bar"])      ;; ["FOO" "BAR"]
 ```
 
-`:require-global` gives a namespace alias to a library that the page already loaded as a global, usually through a `<script>` tag, with no build configuration: `(:require-global [Idiomorph :as idio])`, then `(idio/morph ...)`. At the REPL, `(refer-global :only '[Date])` and `(require-global '[Idiomorph :as idio])` do the same. Keep the `js/` forms when the project must compile on ClojureScript versions before 1.12.116.
+`:require-global` gives a namespace alias to a library that the page already loaded as a global, usually through a `<script>` tag, with no build configuration: `(:require-global [Idiomorph :as idio])`, then `(idio/morph ...)`. At the REPL, `(refer-global :only '[Date])` and `(require-global '[Idiomorph :as idio])` do the same.
 
 ### Native object creation
 
@@ -82,10 +82,10 @@ ClojureScript 1.12.116 added `:refer-global` and Clojure 1.12 method value synta
 
 ### Native object access
 
-Prefer `goog.object/get` and `goog.object/set` for object property access when the property name is dynamic, externs hygiene matters, or advanced optimization is on. Reserve `aget` and `aset` for arrays. `aget` is a JavaScript array index, not an object lookup. On an object it works without optimization but breaks under `:advanced`, because the index becomes a property name that the renamer may have changed:
+Use `goog.object/get` and `goog.object/set` for string-keyed object access, such as a dynamic property name or a key that must survive advanced optimization. Reserve `aget` and `aset` for arrays: their docstrings say they work on JavaScript arrays, and with the `:checked-arrays :warn` compiler option the compiler reports `aget` on an object ("arguments must be an array followed by numeric indices ... consider goog.object/get for object access"). A string key is never renamed, whichever function reads it:
 
 ```clojure
-;; good: dynamic property name, advanced-compilation safe
+;; good: string-keyed object access, advanced-compilation safe
 (goog.object/get user "name")
 (goog.object/set user "name" "Bruce")
 
@@ -93,9 +93,11 @@ Prefer `goog.object/get` and `goog.object/set` for object property access when t
 (aget xs 0)
 (aset xs 0 :first)
 
-;; bad: aget on an object renames the property under advanced compilation
+;; bad: aget is for arrays; :checked-arrays reports this call
 (aget user "name")
 ```
+
+Do not mix the two access styles on one property of an object that ClojureScript code builds. Under `:advanced`, `(set! (.-score o) 5)` writes a renamed property unless an extern names `score`, so `(goog.object/get o "score")` can return `nil` in the release build.
 
 ### Converting between Clojure and JavaScript
 
@@ -119,11 +121,11 @@ Prefer `goog.object/get` and `goog.object/set` for object property access when t
 (:name (js->clj #js {:name "Ada"} :keywordize-keys true)) ; => "Ada"
 ```
 
-ClojureScript 1.12.116 also added `cljs.proxy`, an experimental namespace that exposes ClojureScript maps as JavaScript objects and vectors as array-like values without copying them through `clj->js`. Treat it as experimental and keep `clj->js` as the default at the boundary.
+`cljs.proxy` is an experimental namespace that exposes ClojureScript maps as JavaScript objects and vectors as array-like values without copying them through `clj->js`. Treat it as experimental and keep `clj->js` as the default at the boundary.
 
 ## Type Hints and Externs
 
-Two type-hint forms matter on ClojureScript. `^boolean` is the only hint that changes the generated code, and `^js` drives externs inference:
+Two type-hint forms matter in application code. `^boolean` removes the truthiness check from the generated `if`, and `^js` drives externs inference:
 
 | Hint | Purpose |
 |------|---------|
@@ -141,20 +143,21 @@ Two type-hint forms matter on ClojureScript. `^boolean` is the only hint that ch
 Under `:advanced` optimizations the Google Closure Compiler renames every property name it does not see in an externs file. Code like `(.-userName user)` on a value the compiler cannot infer becomes `(.x user)` in the output, and the property no longer matches the JavaScript object the rest of the system produces, so code that works in development breaks in production. For projects that target advanced compilation, enable externs inference and add `^js/Foo.Bar` hints until the warnings clear. The compiler will warn on every interop call where it cannot determine the target type and emit an inferred externs file when types are known:
 
 ```edn
-;; build config (compiler options); the stock compiler defaults to false
+;; build config (compiler options). The stock compiler defaults to false,
+;; except that :target :bundle turns inference on.
 {:infer-externs true}
 ```
 
-A `^js` hint has no effect while externs inference is off: in a test with the stock compiler and `:advanced`, a hinted property access still returned `nil`. shadow-cljs defaults `:infer-externs` to `:auto` and needs no hint on `js/` globals or on values bound by `:require`. Its User's Guide also advises against annotating everything with `^js` and recommends `^clj` for ClojureScript values that the compiler cannot infer.
+A `^js` hint has no effect while externs inference is off: in a test with the stock compiler and `:advanced`, a hinted property access still returned `nil`. The `*warn-on-infer*` warnings appear either way, so a build that prints no warning can still rename hinted properties when `:infer-externs` is off. shadow-cljs defaults `:infer-externs` to `:auto` and needs no hint on `js/` globals or on values bound by `:require`. Its User's Guide also advises against annotating everything with `^js` and recommends `^clj` for ClojureScript values that the compiler cannot infer.
 
 ```clojure
 ;; at the top of any namespace that does interop
 (set! *warn-on-infer* true)
 ```
 
-Without `^js` hints, calls like `(.baz x)` on a parameter `x` of unknown type will produce a `Cannot infer target type` warning at compile time. With `^js/Foo.Bar x` the compiler accepts the call and writes the property into the inferred externs file. Add manual externs (`.js` files with JSDoc annotations) only for what inference cannot reach.
+The `:warnings {:infer-warning true}` compiler option turns on the same warnings for the whole build. Without `^js` hints, calls like `(.baz x)` on a parameter `x` of unknown type produce a `Cannot infer target type` warning at compile time. With `^js/Foo.Bar x` the compiler accepts the call and writes the property into `inferred_externs.js` in the output directory. A bare `^js` also protects the property, but prints "Adding extern to Object for property ... due to ambiguous expression" while `*warn-on-infer*` is set. Add manual externs (`.js` files with JSDoc annotations) only for what inference cannot reach.
 
-Externs inference requires ClojureScript 1.10.238 or later.
+With `cljs.main --target node`, inference does not cover a function called through the alias of a Node built-in module. After `(:require ["fs" :as fs])`, an `:advanced` build with `:infer-externs true` renamed `existsSync` in `(fs/existsSync "deps.edn")`, which then failed with "is not a function", while `(.existsSync fs "deps.edn")` ran. Call Node built-in modules with method syntax in builds that use `:advanced`.
 
 ## Inserting HTML and URLs (Iron Law CLJS-2)
 

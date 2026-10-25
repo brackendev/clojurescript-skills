@@ -40,9 +40,10 @@ Update later with `apm update [-g]`. Remove with `apm uninstall brackendev/cloju
 
 ## Requirements
 
-- A ClojureScript toolchain. The reference workflow uses the official [`cljs.main`](https://clojurescript.org/guides/quick-start) entry point via the [Clojure CLI](https://clojure.org/guides/install_clojure). ClojureScript 1.12.42 and later require Java 21 or higher. [shadow-cljs](https://github.com/thheller/shadow-cljs) and [figwheel-main](https://github.com/bhauman/figwheel-main) are common community alternatives and are referenced where relevant.
+- A ClojureScript toolchain. The reference workflow uses the official [`cljs.main`](https://clojurescript.org/guides/quick-start) entry point via the [Clojure CLI](https://clojure.org/guides/install_clojure). ClojureScript requires Java 21 or higher. [shadow-cljs](https://github.com/thheller/shadow-cljs) and [figwheel-main](https://github.com/bhauman/figwheel-main) are common community alternatives and are referenced where relevant.
 - [clojure-skills](https://github.com/brackendev/clojure-skills) installed alongside, for the host-neutral baseline.
-- [clj-kondo](https://github.com/clj-kondo/clj-kondo) for the lint steps in the user-invoked skills below. Version 2026.05.25 or later is needed to lint `^:async` functions that use `await`.
+- [clj-kondo](https://github.com/clj-kondo/clj-kondo) for the lint steps in the user-invoked skills below. Install the latest release, because the lint step relies on its support for `^:async` functions and `await`.
+- The `cljs-fix` format step runs [cljfmt](https://github.com/weavejester/cljfmt) through the first of these that the project has: a `:cljfmt` alias in `deps.edn`, the Leiningen plugin, the `cljfmt` binary, or a Clojure CLI tool installed as `cljfmt`. Without any of them, the format step reports that it was skipped and shows the alias to add.
 - The `cljs-fix` dry step requires a [dry4clj](https://github.com/unclebob/dry4clj) `:dry4clj` alias in `deps.edn`. dry4clj is not published to Clojars, so the alias uses a Git coordinate. Without the alias, the dry step reports that it was skipped and shows the alias to add.
 
 ## Command guide
@@ -58,20 +59,21 @@ A quick guide to every slash command. The detailed entries under [Skills](#skill
 
 ### Quality and upgrades
 
-#### `/cljs-fix [lint|format|test|advanced|dry] [--report] [all]`
+#### `/cljs-fix [lint|format|test|advanced|dry] [--report] [all|<path>|<glob>]`
 
-Tidy a ClojureScript project. Defaults to the full sequence (lint, format, test, advanced, dry). Each step is also addressable on its own. The `format` step writes by default (`cljfmt fix`); pass `--report` to swap it for non-writing `cljfmt check`. The `advanced` step runs the project under `:advanced` optimizations as a production-build sanity check and surfaces externs-inference failures. See [CONVENTIONS.md](CONVENTIONS.md) for the argument grammar this skill follows.
+Tidy a ClojureScript project. Defaults to the full sequence (lint, format, test, advanced, dry) on the source and test paths that the project's build configuration declares. Each step is also addressable on its own, and naming files or directories restricts the lint, format, and dry steps to them. The `format` step writes by default (`cljfmt fix`). Pass `--report` to replace it with `cljfmt check`, which writes nothing. The `advanced` step runs the project under `:advanced` optimizations as a production-build sanity check and surfaces externs-inference failures. See [CONVENTIONS.md](CONVENTIONS.md) for the argument grammar this skill follows.
 
 ```bash
 /cljs-fix
 /cljs-fix lint
+/cljs-fix format src/app
 /cljs-fix advanced
 /cljs-fix --report
 ```
 
 #### `/cljs-upgrade [--report] [all]`
 
-Upgrade the `org.clojure/clojurescript` dependency in `deps.edn` to the latest released version on Maven Central. Refreshes dependencies, runs the project's advanced-compile build, and refreshes clj-kondo imports. Reverts the version on compile failure, and never replaces the current version with an older one. Pass `--report` to print the current and latest versions without writing or compiling.
+Upgrade the `org.clojure/clojurescript` dependency in `deps.edn` to the latest released version on Maven Central. Before it writes anything, it reads the ClojureScript release notes between the two versions and lists the entries that affect the project, with the files that use them. It then updates the version, applies the changes from the notes that have a mechanical rewrite, refreshes dependencies, runs the project's advanced-compile build, and refreshes clj-kondo imports. It reverts the version and those changes on compile failure, and never replaces the current version with an older one. In an Electric project it changes nothing and reports the ClojureScript version that the project's Electric release declares, because a newer ClojureScript stops Electric code from loading on the JVM. Pass `--report` to print the current and latest versions and the affecting release-note entries without writing or compiling.
 
 ```bash
 /cljs-upgrade
@@ -84,7 +86,7 @@ These skills activate from conversation context. They cannot be invoked directly
 
 | Skill | Triggers |
 |-------|----------|
-| **clojurescript** | `.cljs` files, `.cljc` files compiled to JS, `shadow-cljs.edn`, `figwheel-main.edn`, ClojureScript `deps.edn` projects, `cljs.test`, JavaScript interop (`js/`, `.-prop`, `(.method obj ...)`, `set!` on properties, `js-obj`, `clj->js`, `js->clj`, `goog.object/get`, `goog.object/set`, `aget`, `aset`), global references (`:refer-global`, `:require-global`), method values (`String/.toUpperCase`, `Date/new`), async functions (`^:async`, `await`, `deftest ^:async`), externs inference (`^js`, `^js/Foo`, `*warn-on-infer*`, `:infer-externs`), macro stage separation (`:require-macros`, `:refer-macros`, `:include-macros`), reader conditionals (`#?`, `#?@`, `:cljs`, `:default`), JS-flavored numerics and truthiness, `^boolean` type hints, browser REPL, Node REPL, source maps, npm interop, the `cljs.main` CLI, shadow-cljs, or figwheel-main. Covers JavaScript interop, async functions, host-typed exception handling (`catch :default`, `js/Error`), externs and advanced compilation, macro stage separation, JS-flavored numerics, host-specific aliases (`goog.object`, `goog.string`, `goog.dom`), and the ClojureScript project workflow. Defers to the [clojure](https://github.com/brackendev/clojure-skills) skill for host-neutral style. The skill opens with Iron Laws (CLJS-1 through CLJS-5), rules that prevent production-only bugs, silent data loss, and security holes on JavaScript hosts. The agent does not write code that breaks them, and it reports a violation it finds in existing code before changing it. |
+| **clojurescript** | `.cljs` files, `.cljc` files compiled to JS, `shadow-cljs.edn`, `figwheel-main.edn`, ClojureScript `deps.edn` projects, `cljs.test`, JavaScript interop (`js/`, `.-prop`, `(.method obj ...)`, `set!` on properties, `js-obj`, `clj->js`, `js->clj`, `goog.object/get`, `goog.object/set`, `aget`, `aset`), global references (`:refer-global`, `:require-global`), method values (`String/.toUpperCase`, `Date/new`), async functions (`^:async`, `await`, `deftest ^:async`, `js/Promise`), externs inference (`^js`, `^js/Foo`, `*warn-on-infer*`, `:infer-externs`), macro stage separation (`:require-macros`, `:refer-macros`, `:include-macros`), reader conditionals (`#?`, `#?@`, `:cljs`, `:default`), JS-flavored numerics and truthiness, `^boolean` type hints, JavaScript exceptions (`catch :default`, `js/Error`), browser REPL, Node REPL, source maps, npm interop, the `cljs.main` CLI, shadow-cljs, or figwheel-main. Covers JavaScript interop, async functions, host-typed exception handling (`catch :default`, `js/Error`), externs and advanced compilation, macro stage separation, JS-flavored numerics, host-specific aliases (`goog.object`, `goog.string`, `goog.dom`), and the ClojureScript project workflow. Defers to the [clojure](https://github.com/brackendev/clojure-skills) skill for host-neutral style. The skill opens with Iron Laws (CLJS-1 through CLJS-5), rules that prevent production-only bugs, silent data loss, and security holes on JavaScript hosts. The agent does not write code that breaks them, and it reports a violation it finds in existing code before changing it. |
 | **clojurescript-lenses** | Auto-triggers alongside the [code-lenses](https://github.com/brackendev/code-lenses) plugin in ClojureScript work. Layers on top of `clojure-lenses` and records only the ClojureScript-specific deltas: JavaScript interop boundaries, externs and advanced compilation, macro stage separation, the JS event loop, and the absence of refs / agents / STM and var reification. Covers the four default code-lenses philosophies (grug, Honest Code, Tidy First, Parse Don't Validate) and the two opt-in philosophies (APOSD, Legacy Code) that activate when their lens is added with `+aposd` or `+legacy-code` or invoked directly. |
 
 ## Contributing

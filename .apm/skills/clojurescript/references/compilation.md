@@ -59,31 +59,14 @@ A macro and a function can have the same name in ClojureScript, and each is reac
 - `:import` is only for Google Closure classes (e.g., `goog.Uri`, `goog.date.Date`). JavaScript classes that are not Closure classes are reached through `js/` or via `:require` of an npm/bundled module.
 - `:refer :all` is not supported on ClojureScript.
 - `gen-class` and `gen-interface` are not implemented.
-- `Foo/bar` resolves `Foo` as a namespace, a namespace alias, a ClojureScript type (`PersistentVector/EMPTY`), or, since 1.12.116, a global referred with `:refer-global`. For a global that is not referred, use `(.member js/Class)` or `js/Class.member`.
-- `:refer-global` and `:require-global` are accepted `ns` clauses since 1.12.116. See "Referred globals and method values" in `references/interop.md`.
+- `Foo/bar` resolves `Foo` as a namespace, a namespace alias, a ClojureScript type (`PersistentVector/EMPTY`), or a global referred with `:refer-global`. The static members of `Math` and `String` (`Math/floor`, `String/fromCharCode`) also resolve without `:refer-global`. For any other global that is not referred, use `(.member js/Class)` or `js/Class.member`.
+- `:refer-global` and `:require-global` are `ns` clauses. See "Referred globals and method values" in `references/interop.md`.
 
 ## Reader Conditionals
 
-`.cljc` files support reader conditionals. The platform tags are `:clj`, `:cljs`, `:cljr`, and `:default`:
+The general rules (the platform tags, what a conditional with no matching branch reads, `#?@` splicing, and the portable `:require` and catch patterns) are in `clojure/references/reader-conditionals.md` in the `clojure` skill (clojure-skills). The ClojureScript compiler reads `.cljc` files with the feature set `#{:cljs}`, so it takes the first branch tagged `:cljs` or `:default`. These parts are specific to ClojureScript:
 
-```clojure
-;; standard reader conditional
-(defn parse-int [s]
-  #?(:clj  (java.lang.Integer/parseInt s)
-     :cljs (js/parseInt s 10)))
-
-;; splicing reader conditional inside a vector
-(defn supported-platforms []
-  [#?@(:clj  [:jvm]
-       :cljs [:browser :node])])
-
-;; namespace form
-(ns my-app.core
-  (:require
-   #?(:clj  [clojure.test :refer [deftest is testing]]
-      :cljs [cljs.test :refer-macros [deftest is testing]])))
-```
-
-If no tag matches and no `:default` is provided, the reader returns nothing (not `nil`). A splicing reader conditional cannot splice multiple top-level forms; use one standard conditional per top-level form instead.
-
-`.cljs` files do not support reader conditionals. Move shared code into `.cljc` when both hosts must read it.
+- `.cljs` files do not read reader conditionals. A `#?` form in a `.cljs` file fails to compile with "Conditional read not allowed". Move shared code into `.cljc` when both hosts must read it.
+- A top-level `#?@` fails in the ClojureScript compiler with "cond-splice not in list", while the JVM reader reports "Reader conditional splicing not allowed at the top level." for the same form.
+- A `.cljc` namespace that loads macros on both hosts uses `:refer-macros` in the `:cljs` branch of a conditional `:require`, as shown under "Macros and Compilation Stages" above.
+- A catch type in a `.cljc` file needs `:default` in the `:cljs` branch when the handler must catch every thrown value ("Reader-conditional exception types" in `references/async-and-errors.md`).

@@ -6,6 +6,49 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.1.22] - 2026-10-25
+
+### Added
+
+- `/cljs-upgrade` reads the ClojureScript release notes between the current and the latest version before it writes anything. It reads `changes.md` at the release tag and the release announcements on clojurescript.org, and its report lists the entries that affect the project, with the files that use them, in a `Changes:` line. `--report` prints the same list and stops early when the project is already at the latest version or ahead of it. Without `--report`, the skill applies the build and source changes that have a mechanical rewrite, and on a compile failure it reverts them along with the version.
+- `/cljs-upgrade` stops without changing anything in a project that depends on Electric (`com.hyperfiddle/electric`). It reports the ClojureScript version that the project's Electric release declares in its POM, because a newer ClojureScript stops every Electric namespace from loading on the JVM.
+- `/cljs-fix` runs cljfmt through the first runner the project has: a `:cljfmt` alias in `deps.edn`, the Leiningen plugin, the `cljfmt` binary, or a Clojure CLI tool installed as `cljfmt`. Without any of them, the format step reports `SKIPPED` and shows a `:cljfmt` alias to add, instead of failing with "fix (No such file or directory)". The alias uses `:replace-deps`, so a conflicting or missing project dependency cannot stop the formatter. The README lists the runners among the requirements.
+- `/cljs-fix` accepts file and directory paths, which restrict the lint, format, and dry steps to them. Without paths, the lint and format steps use the source and test paths that `deps.edn`, `shadow-cljs.edn`, or `project.clj` declares, instead of always `src` and `test`.
+- When a project keeps its cljfmt configuration in `.cljfmt.clj` or `cljfmt.clj`, which cljfmt ignores by default, `/cljs-fix` asks before passing `--read-clj-config-files`. If the configuration cannot be read, the format step reports `SKIPPED` instead of formatting the code against cljfmt's defaults.
+- The project workflow reference shows how to use npm libraries with `cljs.main` through `:target :bundle` and webpack, following the upstream webpack guide, and how to rebuild on file changes with `cljs.main --watch`.
+- The host semantics reference warns that a ratio literal such as `1/2` fails to compile, and that the `N` and `M` suffixes compile to ordinary JavaScript numbers, so a large `N` literal silently loses precision.
+- The host semantics reference covers money: integer minor units below `Number.MAX_SAFE_INTEGER`, a parser that turns a decimal string into cents without floating point, splitting amounts with `quot` and `rem`, the rounding rule of `js/Math.round`, and formatting with `Intl.NumberFormat`. It also warns that `int` truncates to 32 bits and that `parse-long` returns `nil` outside the safe integer range.
+- The async and errors reference shows how to close a resource with `try` and `finally`, because ClojureScript has no `with-open`. Its Node file example awaits the work inside the `try`, and the reference notes that `cljs.main` resolves only the plain Node module names such as `"fs"`, not `"fs/promises"` or `"node:fs"`.
+- The async and errors reference explains that `(catch js/Error e ...)` does not catch a thrown string or plain object, and shows `:default` in the `:cljs` branch of a `.cljc` catch that must catch every value. The testing reference explains the same difference for `thrown?`.
+- The interop reference warns that an `:advanced` build for Node renames a function called through the alias of a Node built-in module, such as `(fs/existsSync ...)`, even with externs inference on, and recommends method syntax such as `(.existsSync fs ...)`.
+
+### Changed
+
+- The `clojurescript` skill description fits the 1,024-character limit of the Agent Skills specification. It keeps every trigger term, and `catch :default` and `js/Error` move from the summary of covered topics into the trigger list. The rest of that summary is removed from the description, and the skill's opening paragraph names the covered topics that the triggers do not, such as advanced compilation and the `goog.string` and `goog.dom` aliases. The README trigger row lists the same triggers.
+- The skills run every non-interactive command with `clojure` instead of `clj`, because `clj` exits with "Please install rlwrap for command editing" when `rlwrap` is missing. The project workflow reference keeps `clj` for the commands that start an interactive REPL.
+- The reader conditional section of the compilation reference keeps the rules specific to ClojureScript, the error messages its compiler prints, and `:refer-macros` in a conditional `:require`. It points to the reader conditional reference in the `clojure` skill for the general rules.
+
+### Fixed
+
+- The `/cljs-fix` dry step reports `SKIPPED`, the same term as the other steps, and the test step reports `SKIPPED` when the project has no test configuration. The dry step said `SKIP`.
+- The `^boolean` example puts the hint on the function name. A hint on the argument vector does not reach callers, so the runtime truthiness check stayed in place.
+- The interop reference no longer claims that `aget` with a string key breaks under `:advanced`. A string key is never renamed. The reference recommends `goog.object/get` for objects because `aget` is documented for arrays and `:checked-arrays` reports it on objects, and it warns against mixing dot access and string access on one property.
+- The externs guidance states that `:target :bundle` turns on externs inference, that `*warn-on-infer*` or `:warnings {:infer-warning true}` prints the inference warnings even when inference is off, and that `^js` hints protect property names only while inference is on. The `/cljs-fix` advanced step describes the same conditions.
+- Iron Law CLJS-3 says that shadow-cljs release builds elide assertions and that the stock compiler keeps them unless `:elide-asserts true` is set. It said that every release build elides assertions.
+- The host semantics reference says that `locking` compiles but takes no lock, that calling a private var from another namespace prints a warning, that the `with-redefs` docstring asks for `^:dynamic` on vars that must be redefined in an advanced build, and that `intern` does not exist.
+- The project workflow reference names the shadow-cljs test targets (`:node-test`, `:browser-test`, and `:karma`) and the command that runs a `:node-test` build. `/cljs-fix` runs the file named by that build's `:output-to`.
+- The figwheel-main entry describes `figwheel-main.edn` for figwheel options and `<build>.cljs.edn` for compiler options. The `:fig` alias it named comes from figwheel-main-template, not from figwheel-main.
+- The `/cljs-fix` advanced step no longer says that results are cached across runs. The Closure Compiler optimizes the whole program on every run.
+- `/cljs-upgrade` explains that the clj-kondo refresh copies library configurations into `.clj-kondo/imports/` and re-analyzes the dependencies, including `cljs.core`.
+- The `*out*` gotcha explains how to capture output with `*print-fn*` or `with-out-str`, and the namespace reference notes that the static members of `Math` and `String` resolve without `:refer-global`.
+- The script-tag globals section points to `references/interop.md` for the `:require-global` syntax.
+- The `:dry4clj` alias that `/cljs-fix` shows aligns its continuation lines, so the alias passes `cljfmt check` once it is pasted into `deps.edn`.
+
+### Removed
+
+- The skills and the README describe only the current ClojureScript and clj-kondo releases. Labels that named the release that introduced a feature, workarounds for older compilers, and the advice to check the compiler version before writing `:refer-global`, method values, or `^:async` are removed. The Java 21 requirement is stated as a current requirement of ClojureScript and shadow-cljs.
+- The CLJSJS example (`cljsjs/react-dom`) is removed. CLJSJS repackages npm releases by hand, so its packages trail npm, and shadow-cljs does not support CLJSJS. The reference says to add JavaScript libraries from npm instead.
+
 ## [0.1.21] - 2026-10-25
 
 ### Added

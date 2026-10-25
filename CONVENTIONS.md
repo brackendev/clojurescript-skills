@@ -66,7 +66,7 @@ The boundary statement: Rule 4 applies to mutating skills that discover candidat
 
 **Reporting.** The skill includes a single "skipped N vendored or generated paths" line in its results when the filter excluded any path. Under `--report`, the skill emits the full list so the operator can audit scope.
 
-**Scope of Rule 4 in this plugin.** Applies to `/cljs-fix`, which discovers candidate files from the workspace. Exempt: `/cljs-upgrade` rewrites the `org.clojure/clojurescript` dependency declaration in `deps.edn`. Its target set is not workspace discovery. The `advanced` step of `/cljs-fix` produces JavaScript output under the configured `:output-dir`; build-artifact writes are out of scope for Rule 4 because the rule governs source mutation, not compiler outputs.
+**Scope of Rule 4 in this plugin.** Applies to `/cljs-fix`, which discovers candidate files from the workspace. Exempt: `/cljs-upgrade` rewrites the `org.clojure/clojurescript` dependency declaration in `deps.edn` and makes the changes that the ClojureScript release notes require. Its target set comes from the dependency and its release notes, not from workspace discovery. The `advanced` step of `/cljs-fix` produces JavaScript output under the configured `:output-dir`. Build-artifact writes are out of scope for Rule 4 because the rule governs source mutation, not compiler outputs.
 
 The file-aware mutating skills include a one-line reference to Rule 4 in their own `## Mutation` or `## Scope` section.
 
@@ -85,7 +85,7 @@ A skill is classified by its actual behavior, not by its name. If the name and b
 | Skill                  | Class           | `--report` available? | Notes |
 |------------------------|-----------------|------------------------|-------|
 | `/cljs-fix`           | Mutating        | Yes                    | `format` step runs `cljfmt fix` by default. `--report` swaps it for `cljfmt check`. `lint`, `test`, `advanced`, and `dry` are pure-read of source regardless. |
-| `/cljs-upgrade`        | Mutating        | Yes                    | Rewrites `:mvn/version` for `org.clojure/clojurescript` in `deps.edn`. `--report` prints the previous and remote version without writing. |
+| `/cljs-upgrade`        | Mutating        | Yes                    | Rewrites `:mvn/version` for `org.clojure/clojurescript` in `deps.edn` and applies the changes that the release notes require. `--report` prints the current and latest versions and the release-note changes that affect the project, without writing. |
 
 The model-only reference skills (`clojurescript`, `clojurescript-lenses`) have no argument surface and are not classified here.
 
@@ -108,6 +108,7 @@ The section name `## Customization` is retired.
 /cljs-fix lint               # lint only (pure-read; no writes anywhere)
 /cljs-fix format             # format step; writes via cljfmt fix
 /cljs-fix advanced dry       # combined step keywords
+/cljs-fix format src/app     # format step on one directory; writes via cljfmt fix
 /cljs-fix --report           # all five steps; format reads via cljfmt check
 /cljs-fix format --report    # format step; no writes
 /cljs-fix all                # synonym for (no argument)
@@ -119,11 +120,11 @@ The skill writes when the `format` step runs without `--report`. With `--report`
 
 ```
 /cljs-upgrade                # upgrade deps.edn :mvn/version and run the advanced build
-/cljs-upgrade --report       # print current :mvn/version and latest from Maven Central; no writes
+/cljs-upgrade --report       # print current and latest versions and the affecting release-note changes; no writes
 /cljs-upgrade all            # synonym for (no argument)
 ```
 
-The default rewrites `:mvn/version` for `org.clojure/clojurescript` in `deps.edn` and verifies with an advanced compile. With `--report`, the skill prints the current `:mvn/version` and the latest released version on Maven Central. No writes. No compile.
+Both modes check that the latest release is newer than the current `:mvn/version` and read the release notes between the two versions before writing anything. The default then rewrites `:mvn/version` for `org.clojure/clojurescript` in `deps.edn`, applies the changes the notes require, and verifies with an advanced compile. With `--report`, the skill prints the current `:mvn/version`, the latest released version on Maven Central, and the release-note changes that affect the project. No writes. No compile.
 
 ## Exemptions
 
@@ -137,9 +138,9 @@ No skill in this plugin claims an exemption today. The standard exemption patter
 
 **`--report` versus natural-language synonyms.** "Preview", "dry run", "rehearse", and similar phrases are scope input or step keywords (or operator chatter), never mode triggers. Only the literal `--report` token disables writes. The `/cljs-fix` step keyword `dry` is the dry4clj duplicate-form scan, not a dry-run mode; the conflict is named here so operators do not read `dry` as "dry run".
 
-**Step keywords versus scope keywords.** A skill like `/cljs-fix` accepts step keywords (`lint`, `format`, `test`, `advanced`, `dry`) that select work to run, and scope keywords (`all`) that widen scope. Step keywords are skill-specific and listed in the skill's own table. Scope keywords are shared and listed here. When a skill has both, the `## Arguments` table lists both with clearly distinct rows.
+**Step keywords versus scope keywords.** A skill like `/cljs-fix` accepts step keywords (`lint`, `format`, `test`, `advanced`, `dry`) that select work to run, and scope input (`all`, `<path>`, `<glob>`) that widens or narrows the files it works on. Step keywords are skill-specific and listed in the skill's own table. Scope keywords are shared and listed here. When a skill has both, the `## Arguments` table lists both with clearly distinct rows.
 
-**Tool-level flags the skill calls internally.** A skill may invoke a tool that itself uses POSIX flags (for example, `clj-kondo --lint`, `cljfmt fix`, `cljfmt check`, `cljs.main --optimizations`, `clj -P`). Those are tool-level flags, not skill flags, and do not count against rule 1. The skill body should disambiguate when a tool flag could be mistaken for a skill flag.
+**Tool-level flags the skill calls internally.** A skill may invoke a tool that itself uses POSIX flags (for example, `clj-kondo --lint`, `cljfmt fix`, `cljfmt check`, `cljs.main --optimizations`, `clojure -P`). Those are tool-level flags, not skill flags, and do not count against rule 1. The skill body should disambiguate when a tool flag could be mistaken for a skill flag.
 
 ## Author checklist
 

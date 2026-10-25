@@ -2,7 +2,7 @@
 
 Reference for `cljs.main` (the official ClojureScript CLI entry point), project structure, `deps.edn` configuration for ClojureScript, the browser and Node REPL flows, source maps, advanced compilation, externs handling, npm interop, and the shadow-cljs and figwheel-main community alternatives.
 
-Authoritative source: [clojurescript.org Quick Start](https://clojurescript.org/guides/quick-start). The exact command lines below match the upstream guide.
+Authoritative source: [clojurescript.org Quick Start](https://clojurescript.org/guides/quick-start). The flags below match the upstream guide, which starts every command with `clj`. `clj` runs `clojure` through `rlwrap` for line editing, and without `rlwrap` it prints "Please install rlwrap for command editing or use "clojure" instead." and exits 1. The commands below keep `clj` where a person starts an interactive REPL, and use `clojure` for every command that the agent runs.
 
 ## CLI
 
@@ -10,22 +10,22 @@ Authoritative source: [clojurescript.org Quick Start](https://clojurescript.org/
 
 ```bash
 clj -M --main cljs.main --compile <main-ns> --repl
-clj -M -m cljs.main --help
+clojure -M -m cljs.main --help
 
 # Browser REPL with a custom launch option (Linux example)
 clj -M --main cljs.main --repl-opts "{:launch-browser false}" --compile <main-ns> --repl
 
 # Production build (advanced optimization)
-clj -M -m cljs.main --optimizations advanced -c <main-ns>
+clojure -M -m cljs.main --optimizations advanced -c <main-ns>
 
 # Node target
-clj -M -m cljs.main --target node --output-to main.js -c <main-ns>
+clojure -M -m cljs.main --target node --output-to main.js -c <main-ns>
 
 # Node REPL
 clj -M -m cljs.main --repl-env node
 
 # Local development web server
-clj -M -m cljs.main --serve
+clojure -M -m cljs.main --serve
 ```
 
 The Quick Start notes: "main options like `--compile`, `--main`, `--repl` must always come last."
@@ -56,7 +56,7 @@ Minimal ClojureScript dependency (from the Quick Start):
 {:deps {org.clojure/clojurescript {:mvn/version "1.12.145"}}}
 ```
 
-ClojureScript 1.12.42 and later require Java 21 or higher, because the bundled Google Closure Compiler requires it. The version above matches the upstream Quick Start at the time of writing. Check [the ClojureScript releases page](https://github.com/clojure/clojurescript/releases) for newer builds and update on a fresh project.
+ClojureScript requires Java 21 or later, because its Google Closure Compiler dependency requires Java 21. `/cljs-upgrade` moves an existing project to the latest release on Maven Central.
 
 ## REPL
 
@@ -90,7 +90,13 @@ Stack traces in both REPLs map back to ClojureScript source as described in "Sou
 
 ### Watch and incremental compile
 
-`cljs.main` does not include a built-in file watcher. For an incremental development loop, use shadow-cljs or figwheel-main (see below), or wrap a watcher around `cljs.main --compile`.
+`--watch` rebuilds when a file under the listed paths changes. It works only with `--compile`, and, like every init option, comes before the main option:
+
+```bash
+clojure -M -m cljs.main --watch src --compile <main-ns>
+```
+
+`cljs.main` does not reload code into a running page. For hot reloading, use shadow-cljs or figwheel-main (see below).
 
 ## Source Maps
 
@@ -103,67 +109,75 @@ npm install source-map-support
 ## Advanced Compilation
 
 ```bash
-clj -M -m cljs.main --optimizations advanced -c <main-ns>
+clojure -M -m cljs.main --optimizations advanced -c <main-ns>
 ```
 
 Resolve every externs inference warning before promoting a build to advanced optimization, and test the release artifact before reporting success (Iron Law CLJS-3). shadow-cljs release builds use `:advanced` by default and also elide assertions. To debug a release-only failure, use `shadow-cljs check`, `shadow-cljs release app --debug`, or `:pseudo-names true`. "Type Hints and Externs" in `references/interop.md` describes the property-renaming hazard and the externs inference workflow.
 
-ClojureScript 1.12.116 added two experimental compiler options for very small programs. `:lite-mode true` makes data literals use lighter copy-on-write collections, and `:elide-to-string true` removes the collection `toString` implementations so dead code elimination can drop the printer. Upstream describes them as useful only for simple programs: once a program has enough dependencies or uses enough of `cljs.core`, the size savings disappear. Do not enable them on an application build without measuring the output.
+Two experimental compiler options target very small programs. `:lite-mode true` makes data literals use lighter copy-on-write collections, and `:elide-to-string true` removes the collection `toString` implementations so dead code elimination can drop the printer. Upstream describes them as useful only for simple programs: once a program has enough dependencies or uses enough of `cljs.core`, the size savings disappear. Do not enable them on an application build without measuring the output.
 
 ## NPM Interop
 
-Two patterns are in common use today.
-
-### CLJSJS
-
-Historically the most portable approach: each npm package is wrapped as a Maven jar published to the [CLJSJS](https://github.com/cljsjs/packages) repository, listed as a regular Clojure dependency, and reached through `js/` globals. The Quick Start example illustrates the shape:
-
-```clojure
-;; deps.edn
-{:deps {cljsjs/react-dom {:mvn/version "16.2.0-3"}}}
-
-;; namespace
-(ns hello-world.core
-  (:require react-dom))
-
-;; access
-js/ReactDOM
-```
-
-CLJSJS coverage is uneven for newer packages; many projects migrate to a build tool that consumes `node_modules` directly.
-
-### Build-tool-managed npm modules
-
-[shadow-cljs](https://github.com/thheller/shadow-cljs) and [figwheel-main](https://github.com/bhauman/figwheel-main) both resolve string requires against `node_modules`:
+Add JavaScript libraries from npm and require them by package name. The string form (`["react" :as react]`) works with shadow-cljs, and with `cljs.main` and figwheel-main under `:target :bundle`.
 
 ```clojure
 (ns my-app.core
   (:require ["react" :as react]
-            ["react-dom" :as react-dom]))
+            ["react-dom/client" :as react-dom]))
 
 (react/createElement "div" nil "Hello")
 ```
 
-The string require form (`["react" :as react]`) is supported by shadow-cljs and figwheel-main. The plain `cljs.main` CLI also accepts it for projects configured to use the `:bundle` target. Consult each tool's documentation for current behavior before relying on edge cases.
+### `:target :bundle` with `cljs.main`
+
+The official toolchain hands npm modules to a JavaScript bundler. With `:target :bundle`, the compiler emits Node-style `require` calls for those modules and runs `:bundle-cmd` after each build. The target also turns on externs inference, so `:advanced` builds keep the property names of npm values. The build file from the upstream [webpack guide](https://clojurescript.org/guides/webpack):
+
+```clojure
+;; build.edn
+{:main my-app.core
+ :output-to "out/index.js"
+ :output-dir "out"
+ :target :bundle
+ :bundle-cmd {:none ["npx" "webpack" "./out/index.js" "-o" "out" "--mode=development"]
+              :default ["npx" "webpack" "./out/index.js" "-o" "out"]}
+ :closure-defines {cljs.core/*global* "window"}} ;; needed for advanced
+```
+
+```bash
+npm install react react-dom
+npm install --save-dev webpack webpack-cli
+clojure -M -m cljs.main -co build.edn -c                  # development build
+clojure -M -m cljs.main -co build.edn -O advanced -c      # release build
+```
+
+webpack writes the page's script to `out/main.js`. Add `-r` after `-c` for a browser REPL. figwheel-main uses the same `:target :bundle` option and fills in the `:bundle-cmd` paths itself (see [Using NPM](https://figwheel.org/docs/npm.html) in the figwheel-main docs).
+
+### shadow-cljs
+
+shadow-cljs reads `node_modules` directly and needs no bundler or `:target :bundle`. Install the package with npm and require it.
+
+### CLJSJS
+
+Do not add new `cljsjs/*` dependencies. CLJSJS repackages npm releases as jars by hand, so its packages trail npm, and shadow-cljs does not support CLJSJS at all. The shadow-cljs User's Guide concludes: "Use npm directly."
 
 ### Script-tag globals
 
-`:require-global` (ClojureScript 1.12.116 and later) aliases a library that the page loads as a global through a `<script>` tag, with no npm or bundler configuration. The main `SKILL.md` ("Referred globals and method values") gives the syntax. This suits pages with one or two JavaScript dependencies, such as hypermedia-style applications. Projects that already consume `node_modules` should keep their build tool's npm support.
+`:require-global` aliases a library that the page loads as a global through a `<script>` tag, with no npm or bundler configuration. "Referred globals and method values" in `references/interop.md` gives the syntax. This suits pages with one or two JavaScript dependencies, such as hypermedia-style applications. Projects that already consume `node_modules` should keep their npm setup.
 
 ## Community Alternatives
 
-The official toolchain is `cljs.main`. Two community tools are widely used and are referenced where relevant; their conventions are not documented here in depth because they evolve independently.
+The official toolchain is `cljs.main`. Two community tools are widely used and are referenced where relevant. Their conventions are not documented here in depth because they evolve independently.
 
 | Tool | Strengths | Where to look |
 |------|-----------|---------------|
 | [shadow-cljs](https://github.com/thheller/shadow-cljs) | Tight npm integration via `shadow-cljs.edn`, hot reload, multi-target builds, npm-style invocation (`npx shadow-cljs watch app`). | [shadow-cljs User's Guide](https://shadow-cljs.github.io/docs/UsersGuide.html) |
-| [figwheel-main](https://github.com/bhauman/figwheel-main) | Hot reload with a Clojure CLI integration, configured via `figwheel-main.edn` and `:fig` aliases. | [figwheel-main docs](https://figwheel.org/) |
+| [figwheel-main](https://github.com/bhauman/figwheel-main) | Hot reload with a Clojure CLI integration. Figwheel options live in `figwheel-main.edn` and compiler options in a `<build>.cljs.edn` file, started with `clojure -M -m figwheel.main -b dev -r`. Projects from figwheel-main-template wrap this in a `:fig` alias. | [figwheel-main docs](https://figwheel.org/) |
 
 When working in a shadow-cljs or figwheel-main project, defer to that project's tooling for build commands and REPL connection. The host-neutral REPL guidance in the `clojure` skill still applies.
 
 Two shadow-cljs facts affect these projects:
 
-- **shadow-cljs 3.x requires Java 21.** Release 3.0.0 (2025-04-24) raised the minimum to Java 21 when it updated the Closure Compiler. Check `java -version` before building a shadow-cljs 3 project.
+- **shadow-cljs requires Java 21 or later.** Check `java -version` before building a shadow-cljs project. Each shadow-cljs release also pins its own `org.clojure/clojurescript` and Closure Compiler versions, and its User's Guide calls matching versions "very important", so upgrade `thheller/shadow-cljs` instead of overriding the ClojureScript version.
 - **`:deps` moves source paths and dependencies to `deps.edn`.** When `shadow-cljs.edn` sets `:deps` (`:deps true` or `:deps {:aliases [...]}`), shadow-cljs resolves its dependencies and source paths through `deps.edn` instead of its own `:dependencies` and `:source-paths`. Put the source paths in `deps.edn` `:paths` (or an alias's `:extra-paths`), list the aliases in `:deps {:aliases [...]}`, and add `thheller/shadow-cljs` to `deps.edn` yourself.
 
 ### shadow-cljs REPL
@@ -182,7 +196,7 @@ From a terminal, `npx shadow-cljs cljs-repl app` opens the same build REPL. A bu
 
 ```bash
 # Node-targeted tests via cljs.main
-clj -M -m cljs.main --target node --output-to out/tests.js -c my-app.test-runner
+clojure -M -m cljs.main --target node --output-to out/tests.js -c my-app.test-runner
 node out/tests.js
 ```
 
@@ -193,4 +207,4 @@ For interactive testing during development, evaluate `(cljs.test/run-tests 'my-a
 (cljs.test/run-tests 'my-app.core-test)
 ```
 
-shadow-cljs ships a `:test` target with a `karma` runner and a node-test runner; figwheel-main pairs with [cljs-test-display](https://github.com/bhauman/cljs-test-display) for a browser-based runner. Each tool's documentation covers the project layout it expects.
+shadow-cljs has `:node-test`, `:browser-test`, and `:karma` build targets. For a `:node-test` build named `:test` with `:output-to "out/node-tests.js"`, run `npx shadow-cljs compile test && node out/node-tests.js`. The Node process exits 1 on any failure. figwheel-main serves [cljs-test-display](https://github.com/bhauman/cljs-test-display) results when its `:auto-testing` option is on. Each tool's documentation covers the project layout it expects.

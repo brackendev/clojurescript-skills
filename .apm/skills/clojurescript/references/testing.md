@@ -32,9 +32,11 @@ For `.cljc` tests that run on both hosts, use a reader conditional in the requir
   (is (thrown? #?(:clj Exception :cljs js/Error) (core/parse-int! "not-a-number"))))
 ```
 
+`thrown?` uses its type as the catch type. `js/Error` asserts that the code threw an `Error` (including `ex-info`), so a thrown string escapes the assertion and the test reports an error. `(thrown? :default ...)` passes for any thrown value, so use it only when the test accepts a value that is not an `Error`.
+
 `cljs.test` loads its own macros, so `(:require [cljs.test :refer [deftest is testing]])` works as well as the `:refer-macros` form above.
 
-Since 1.12.145, `deftest ^:async` defines a test whose body can `await` Promises. The test runner waits for the returned Promise before moving on:
+`deftest ^:async` defines a test whose body can `await` Promises. The test runner waits for the returned Promise before moving on:
 
 ```clojure
 (deftest ^:async fetch-json-test
@@ -42,6 +44,15 @@ Since 1.12.145, `deftest ^:async` defines a test whose body can `await` Promises
     (is (= "Bruce" (:name result)))))
 ```
 
-On older compilers, use `cljs.test/async` with a `done` callback.
+For an API that reports through a callback instead of a Promise, wrap the test body in `cljs.test/async`, referred alongside `deftest` and `is`, and call `done` from the callback:
+
+```clojure
+(deftest callback-test
+  (async done
+    (api/fetch-json-cb "/fixtures/user.json"
+                       (fn [result]
+                         (is (= "Bruce" (:name result)))
+                         (done)))))
+```
 
 For test seams, see the `with-redefs` entry under "Vars" in `references/host-semantics.md`.
