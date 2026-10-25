@@ -166,6 +166,18 @@ Two shadow-cljs facts affect these projects:
 - **shadow-cljs 3.x requires Java 21.** Release 3.0.0 (2025-04-24) raised the minimum to Java 21 when it updated the Closure Compiler. Check `java -version` before building a shadow-cljs 3 project.
 - **`:deps` moves source paths and dependencies to `deps.edn`.** When `shadow-cljs.edn` sets `:deps` (`:deps true` or `:deps {:aliases [...]}`), shadow-cljs resolves its dependencies and source paths through `deps.edn` instead of its own `:dependencies` and `:source-paths`. Put the source paths in `deps.edn` `:paths` (or an alias's `:extra-paths`), list the aliases in `:deps {:aliases [...]}`, and add `thheller/shadow-cljs` to `deps.edn` yourself.
 
+### shadow-cljs REPL
+
+The shadow-cljs server runs an nREPL server and writes its port to `.shadow-cljs/nrepl.port`. It also writes `.nrepl-port` when `shadow-cljs.edn` sets `:nrepl {:write-port-file true}`, and `:nrepl {:port 9000}` fixes the port. An nREPL session starts in Clojure, in the `shadow.user` namespace, where `shadow` aliases `shadow.cljs.devtools.api`:
+
+```clojure
+(shadow/active-builds)   ; builds with a running watch
+(shadow/repl :app)       ; switch this session to the :app build's ClojureScript REPL
+:cljs/quit               ; return to the Clojure REPL; the watch keeps running
+```
+
+From a terminal, `npx shadow-cljs cljs-repl app` opens the same build REPL. A build REPL needs two things: a running `watch` for the build, and a JavaScript runtime that has loaded the build's output and connected to the server (the browser page for `:browser` builds, the `node` process for `:node-script` builds). Without the runtime, every evaluation prints "No available JS runtime." and returns `nil`. Open the app or start the process, then evaluate again. Reloading the page clears the runtime's REPL state.
+
 ## Testing
 
 ```bash
