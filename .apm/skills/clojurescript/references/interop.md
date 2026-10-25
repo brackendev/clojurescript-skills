@@ -112,7 +112,12 @@ Prefer `goog.object/get` and `goog.object/set` for object property access when t
       (.then #(js->clj % :keywordize-keys true))))
 ```
 
-`(js->clj x :keywordize-keys true)` converts string keys to Clojure keywords. The default leaves them as strings.
+`(js->clj x :keywordize-keys true)` converts string keys to Clojure keywords. The default leaves them as strings, so keyword lookups on the result silently return `nil` (Iron Law CLJS-4):
+
+```clojure
+(:name (js->clj #js {:name "Ada"}))                       ; => nil, the key is "name"
+(:name (js->clj #js {:name "Ada"} :keywordize-keys true)) ; => "Ada"
+```
 
 ClojureScript 1.12.116 also added `cljs.proxy`, an experimental namespace that exposes ClojureScript maps as JavaScript objects and vectors as array-like values without copying them through `clj->js`. Treat it as experimental and keep `clj->js` as the default at the boundary.
 
@@ -131,14 +136,16 @@ Two type-hint forms matter on ClojureScript. `^boolean` is the only hint that ch
   (.baz x))
 ```
 
-### Externs inference
+### Externs inference (Iron Law CLJS-1)
 
 Under `:advanced` optimizations the Google Closure Compiler renames every property name it does not see in an externs file. Code like `(.-userName user)` on a value the compiler cannot infer becomes `(.x user)` in the output, and the property no longer matches the JavaScript object the rest of the system produces, so code that works in development breaks in production. For projects that target advanced compilation, enable externs inference and add `^js/Foo.Bar` hints until the warnings clear. The compiler will warn on every interop call where it cannot determine the target type and emit an inferred externs file when types are known:
 
 ```edn
-;; build config (compiler options)
+;; build config (compiler options); the stock compiler defaults to false
 {:infer-externs true}
 ```
+
+A `^js` hint has no effect while externs inference is off: in a test with the stock compiler and `:advanced`, a hinted property access still returned `nil`. shadow-cljs defaults `:infer-externs` to `:auto` and needs no hint on `js/` globals or on values bound by `:require`. Its User's Guide also advises against annotating everything with `^js` and recommends `^clj` for ClojureScript values that the compiler cannot infer.
 
 ```clojure
 ;; at the top of any namespace that does interop
@@ -148,6 +155,20 @@ Under `:advanced` optimizations the Google Closure Compiler renames every proper
 Without `^js` hints, calls like `(.baz x)` on a parameter `x` of unknown type will produce a `Cannot infer target type` warning at compile time. With `^js/Foo.Bar x` the compiler accepts the call and writes the property into the inferred externs file. Add manual externs (`.js` files with JSDoc annotations) only for what inference cannot reach.
 
 Externs inference requires ClojureScript 1.10.238 or later.
+
+## Inserting HTML and URLs (Iron Law CLJS-2)
+
+MDN calls `innerHTML` "probably the most common vector for cross-site scripting (XSS) attacks, where potentially unsafe strings provided by a user are injected into the DOM without first being sanitized." The same applies to every API that parses a string as HTML, such as `insertAdjacentHTML` and React's `dangerouslySetInnerHTML`. The OWASP XSS Prevention Cheat Sheet also lists unvalidated URL values: a user-controlled `href` or `src` can hold a `javascript:` URL, so allow only expected schemes such as `https:` and `mailto:`.
+
+```clojure
+;; bad: comment can contain <img src=x onerror=...>
+(set! (.-innerHTML el) comment)
+
+;; good: plain text is never parsed as HTML
+(set! (.-textContent el) comment)
+```
+
+When content must stay HTML, sanitize it first with a maintained sanitizer such as DOMPurify, which OWASP recommends, and treat the sanitized result as the only value that reaches the HTML API.
 
 ## ClojureScript Aliases
 

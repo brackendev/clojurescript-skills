@@ -18,7 +18,7 @@ For arbitrary-precision integer work, use `js/BigInt` directly (and remember it 
 
 ## Truthiness and Boolean Handling
 
-Clojure's `if` treats only `nil` and `false` as falsy on every host, including ClojureScript. The compiler inserts a runtime check on every `if` to preserve this semantic against JavaScript's wider falsy set (`0`, `""`, `NaN`, `null`, `undefined`). The `^boolean` type hint tells the compiler the expression is already a JS boolean and the check can be skipped. Reach for it on hot paths where the predicate is known to produce a boolean.
+Clojure's `if` treats only `nil` and `false` as falsy on every host, including ClojureScript. The compiler inserts a runtime check on every `if` to preserve this semantic against JavaScript's wider falsy set (`0`, `""`, `NaN`, `null`, `undefined`). The `^boolean` type hint tells the compiler the expression is already a JS boolean and the check can be skipped. Reach for it on hot paths where the predicate always produces `true` or `false` (Iron Law CLJS-5). If a hinted expression returns `0` or `""`, the unchecked `if` takes the false branch, while Clojure semantics would take the true branch.
 
 ```clojure
 ;; good

@@ -106,7 +106,7 @@ npm install source-map-support
 clj -M -m cljs.main --optimizations advanced -c <main-ns>
 ```
 
-Resolve every externs inference warning before promoting a build to advanced optimization. The main `SKILL.md` ("Type Hints and Externs") describes the property-renaming hazard and the externs inference workflow.
+Resolve every externs inference warning before promoting a build to advanced optimization, and test the release artifact before reporting success (Iron Law CLJS-3). shadow-cljs release builds use `:advanced` by default and also elide assertions. To debug a release-only failure, use `shadow-cljs check`, `shadow-cljs release app --debug`, or `:pseudo-names true`. "Type Hints and Externs" in `references/interop.md` describes the property-renaming hazard and the externs inference workflow.
 
 ClojureScript 1.12.116 added two experimental compiler options for very small programs. `:lite-mode true` makes data literals use lighter copy-on-write collections, and `:elide-to-string true` removes the collection `toString` implementations so dead code elimination can drop the printer. Upstream describes them as useful only for simple programs: once a program has enough dependencies or uses enough of `cljs.core`, the size savings disappear. Do not enable them on an application build without measuring the output.
 

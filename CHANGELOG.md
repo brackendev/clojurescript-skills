@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.1.21] - 2026-10-25
+
+### Added
+
+- The `clojurescript` skill opens with Iron Laws (CLJS-1 through CLJS-5): numbered rules that prevent production-only bugs, silent data loss, and security holes on JavaScript hosts. The agent does not write code that breaks a law, and when existing code breaks one, it reports the law ID, the location, and the correct pattern, then asks before changing code outside the task. Key Rules that guarded against bugs or security holes moved into the laws, and the remaining Key Rules are renumbered.
+- The `clojurescript` interop reference covers inserting HTML safely: `textContent` for plain text and a sanitizer for content that must stay HTML.
+- The interop reference explains that `^js` hints need externs inference, which the stock compiler leaves off by default, and covers `js->clj` key conversion and unsafe URL values.
+
+### Fixed
+
+- The project workflow reference points to `references/interop.md` for the externs guidance, which moved out of `SKILL.md` in 0.1.20.
+
 ## [0.1.20] - 2026-10-25
 
 ### Added
