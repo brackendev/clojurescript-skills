@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.1.24] - 2026-10-29
+
+### Added
+
+- `cljs-rules` hook: delivers the condensed CLJS-1 through CLJS-5 Iron Laws to the agent at session start, after `/clear` or a compaction, and on the first matching edit when the session started outside a matching project, with an instruction to load the `clojurescript` skill along with the `clojure` skill. Verified only under Claude Code. Copilot and Cursor receive no copy.
+- Hook test suites in `tests/hooks/` (`bb tests/hooks/run.bb`), and empty `copilot-hooks.json` and `cursor-hooks.json` files.
+
 ## [0.1.23] - 2026-10-29
 
 ### Changed

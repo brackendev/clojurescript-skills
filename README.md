@@ -45,6 +45,7 @@ Update later with `apm update [-g]`. Remove with `apm uninstall brackendev/cloju
 - [clj-kondo](https://github.com/clj-kondo/clj-kondo) for the lint steps in the user-invoked skills below. Install the latest release, because the lint step relies on its support for `^:async` functions and `await`.
 - The `cljs-fix` format step runs [cljfmt](https://github.com/weavejester/cljfmt) through the first of these that the project has: a `:cljfmt` alias in `deps.edn`, the Leiningen plugin, the `cljfmt` binary, or a Clojure CLI tool installed as `cljfmt`. Without any of them, the format step reports that it was skipped and shows the alias to add.
 - The `cljs-fix` dry step requires a [dry4clj](https://github.com/unclebob/dry4clj) `:dry4clj` alias in `deps.edn`. dry4clj is not published to Clojars, so the alias uses a Git coordinate. Without the alias, the dry step reports that it was skipped and shows the alias to add.
+- [Babashka](https://babashka.org) (`bb`) to run the `cljs-rules` hook. Without it, the hook does nothing and prints a notice on standard error.
 
 ## Command guide
 
@@ -88,6 +89,16 @@ These skills activate from conversation context. They cannot be invoked directly
 |-------|----------|
 | **clojurescript** | `.cljs` files, `.cljc` files compiled to JS, `shadow-cljs.edn`, `figwheel-main.edn`, ClojureScript `deps.edn` projects, `cljs.test`, JavaScript interop (`js/`, `.-prop`, `(.method obj ...)`, `set!` on properties, `js-obj`, `clj->js`, `js->clj`, `goog.object/get`, `goog.object/set`, `aget`, `aset`), global references (`:refer-global`, `:require-global`), method values (`String/.toUpperCase`, `Date/new`), async functions (`^:async`, `await`, `deftest ^:async`, `js/Promise`), externs inference (`^js`, `^js/Foo`, `*warn-on-infer*`, `:infer-externs`), macro stage separation (`:require-macros`, `:refer-macros`, `:include-macros`), reader conditionals (`#?`, `#?@`, `:cljs`, `:default`), JS-flavored numerics and truthiness, `^boolean` type hints, JavaScript exceptions (`catch :default`, `js/Error`), browser REPL, Node REPL, source maps, npm interop, the `cljs.main` CLI, shadow-cljs, or figwheel-main. Covers JavaScript interop, async functions, host-typed exception handling (`catch :default`, `js/Error`), externs and advanced compilation, macro stage separation, JS-flavored numerics, host-specific aliases (`goog.object`, `goog.string`, `goog.dom`), and the ClojureScript project workflow. Defers to the [clojure](https://github.com/brackendev/clojure-skills) skill for host-neutral style. The skill opens with Iron Laws (CLJS-1 through CLJS-5), rules that prevent production-only bugs, silent data loss, and security holes on JavaScript hosts. The agent does not write code that breaks them, and it reports a violation it finds in existing code before changing it. |
 | **clojurescript-lenses** | Auto-triggers alongside the [code-lenses](https://github.com/brackendev/code-lenses) plugin in ClojureScript work. Layers on top of `clojure-lenses` and records only the ClojureScript-specific deltas: JavaScript interop boundaries, externs and advanced compilation, macro stage separation, the JS event loop, and the absence of refs / agents / STM and var reification. Covers the four default code-lenses philosophies (grug, Honest Code, Tidy First, Parse Don't Validate) and the two opt-in philosophies (APOSD, Legacy Code) that activate when their lens is added with `+aposd` or `+legacy-code` or invoked directly. |
+
+## Hooks
+
+The package includes one hook, `cljs-rules`.
+
+### `cljs-rules`
+
+Agents seldom load an auto-triggered skill on their own, so this hook gives the agent the CLJS-1 through CLJS-5 Iron Laws of the `clojurescript` skill as text. In a project with `shadow-cljs.edn` or `figwheel-main.edn`, or a `deps.edn` or `project.clj` that names `org.clojure/clojurescript`, it puts the condensed laws into the agent's context when a session starts, and again after `/clear` or a compaction, with an instruction to load the `clojurescript` skill along with the `clojure` skill. When the session starts outside such a project, for example in a parent directory, the hook delivers the laws on the first edit of a `.cljs`, `.cljc`, or `.edn` file in a matching project instead, once per session. The hook never edits a file. Without Babashka it does nothing and prints a notice on standard error.
+
+The hook has been run only under Claude Code, where it registers `SessionStart` and `PostToolUse`. The package ships empty Copilot and Cursor hook files, so APM writes no Copilot hook and no native Cursor hook. APM also installs the generic copy for Codex, Gemini CLI, Kiro, and Windsurf, where its effect has not been tested. OpenCode and Grok Build have no hook support.
 
 ## Contributing
 
