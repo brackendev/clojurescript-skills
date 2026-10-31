@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.1.25] - 2026-10-31
+
+### Changed
+
+- The Honest Code section of `clojurescript-lenses` cites the Honest Code Principles by number (P01-P25), which the code-lenses `honest-code` skill now follows, instead of the construct names code-lenses no longer uses. It reports a single-page app's client state as a departure from P05 instead of describing it as conforming, and it adds P17's warning about a read and a write separated by an `await`.
+
 ## [0.1.24] - 2026-10-29
 
 ### Added

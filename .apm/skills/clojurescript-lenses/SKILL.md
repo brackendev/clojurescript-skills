@@ -59,14 +59,18 @@ When the [code-lenses](https://github.com/brackendev/code-lenses) plugin is acti
 
 ## Honest Code
 
-- Data is data. Clojure maps, vectors, and sets are honest; `js-obj` and `clj->js` results belong at the interop boundary. Keep the inside of a namespace Clojure-shaped.
-- Pure functions over immutable data are idiomatic. Reagent components are pure functions of state; re-frame subscriptions are pure transformations of the app DB; React function components in Fulcro / Helix are pure. Hidden state is dishonest in any of those.
-- One source of truth: ClojureScript apps often centralize state in a single `re-frame` app-db or a single `defonce` atom. That is the honest variant. Distributing state across many top-level `def` atoms makes reasoning fragile.
-- Compose flat, never deep: hiccup is flat composition. Threading macros, `comp`, transducers, and middleware stacks (Reagent / re-frame interceptors) are flat. Avoid deep React component hierarchies that hide their own state.
-- Let It Crash, ClojureScript edition: catch JS-typed exceptions where they have a named type (`js/TypeError`, `js/Error`) and `:default` for the catch-all. For background work (web workers, service workers), surface failure to the main thread and let the supervisor decide. There is no Erlang-style supervisor on the JS host.
-- Boring tests: `cljs.test` with `(is (= (f input) expected))` is the boring test. Reach for `with-redefs`-style stubbing rarely; ClojureScript's var semantics do not match JVM's, and dependency injection through function arguments or protocols is more honest.
-- Declare what, not how: spec / Malli schemas, re-frame interceptors, and Reagent reactions are declarations. Prefer them to imperative effect chains.
-- Atoms remain honest state. The JS host is single-threaded per realm, so `swap!` semantics simplify: no race conditions inside a synchronous call. `core.async` channels are honest when the use case requires backpressure or pipelines, but a Promise is simpler for a single asynchronous action. An `^:async` function with `await` reads as straight-line code and keeps error handling in ordinary `try` / `catch`, which is more honest than a nested `.then` chain.
+Cite principles by number, as `clojure-lenses` describes. ClojureScript adds these translations:
+
+- **P02:** Clojure maps, vectors, and sets are plain data. `js-obj` and `clj->js` results belong at the interop boundary, so keep the inside of a namespace Clojure-shaped.
+- **P02 and P03:** Reagent components, re-frame subscriptions, and Fulcro or Helix function components are pure functions of their inputs. A fetch, a `localStorage` call, or an atom swap inside one is I/O in the middle of the logic.
+- **P05 (DOM as State):** A ClojureScript single-page app keeps client state in a re-frame app-db or an atom, which is the client-side copy of server state that P05 replaces with server-rendered HTML. When the project has chosen a client-state design, report it as a departure from P05 with its reason, not as conformance. Within that design, one app-db or one `defonce` atom keeps a single client copy, while many top-level `def` atoms become copies that can disagree with each other.
+- **P04:** Hiccup, threading macros, `comp`, transducers, and re-frame interceptor chains are pipelines. Avoid deep React component hierarchies that hide their own state.
+- **P22:** Reagent reactions and re-frame subscriptions declare derived state. Prefer them to lifecycle methods such as `:component-did-mount`, which P22 counts as an initialization order nobody can see.
+- **P08 and P24:** Catch JS errors only at the boundary, by named type where one exists (`js/TypeError`, `js/Error`) and with `:default` for the rest. For web workers and service workers, send the failure to the main thread as a value that names the outcome, so the boundary decides.
+- **P10:** `(is (= (f input) expected))` in `cljs.test` is the whole test. `with-redefs` counts as a mock under P10, and ClojureScript's var semantics do not match the JVM's, so pass dependencies as function arguments or protocols instead.
+- **P11:** Spec and Malli schemas are declarations. Prefer them to imperative checks.
+- **P17:** The JS host runs one synchronous call at a time, so `swap!` cannot race inside one call. A read before an `await` and a write after it is still check-then-act, which P17 says an async runtime makes certain. Check and update together inside one `swap!` function.
+- **Asynchronous code (this package's guidance, not a principle):** `core.async` channels fit backpressure or pipelines, and a Promise is simpler for a single asynchronous action. An `^:async` function with `await` reads as straight-line code, so its fault path is easier to follow than a nested `.then` chain.
 
 ## Legacy Code
 
