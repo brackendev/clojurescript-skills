@@ -35,6 +35,19 @@ Part of the `clojurescript` skill. It applies to ClojureScript on JavaScript hos
 
 Prefer `^:async` over `.then` chains and over `core.async` for single asynchronous actions. `core.async` remains the tool for channels, backpressure, and pipelines.
 
+Other callbacks run while a function waits on `await`, so state read before an `await` can be stale after it. Do not deref an atom, `await`, and then `reset!` a value computed from the earlier read. Make the update after the `await` in one `swap!` that reads the current value:
+
+```clojure
+;; bad: another callback can change cart between the deref and the reset!
+(let [items (:items @cart)
+      price (await (fetch-price id))]
+  (reset! cart (assoc @cart :items (conj items {:id id :price price}))))
+
+;; good: the update reads the current value
+(let [price (await (fetch-price id))]
+  (swap! cart update :items conj {:id id :price price}))
+```
+
 ## Exception Handling
 
 `ex-info` for data-carrying exceptions remains the baseline. On ClojureScript, catch JS-typed exceptions when the failure mode already has a named JS type, and use `:default` for the catch-all:

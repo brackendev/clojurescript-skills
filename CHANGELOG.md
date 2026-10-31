@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.1.26] - 2026-10-31
+
+### Removed
+
+- The `clojurescript-lenses` skill. The code-lenses package now detects the stack of the code under review and applies each lens to it through general rules, so a separate translation skill per language is no longer needed and its copy of code-lenses guidance can no longer drift.
+
+### Added
+
+- `clojurescript/references/async-and-errors.md` warns that state read before an `await` can be stale after it, and shows the update made in one `swap!` after the `await`.
+- `clojurescript/references/host-semantics.md` states that JavaScript `undefined` behaves as `nil` for `nil?`, `=`, `some?`, `when-some`, and `some->`, checked with ClojureScript 1.12.145 on Node.
+
 ## [0.1.25] - 2026-10-31
 
 ### Changed

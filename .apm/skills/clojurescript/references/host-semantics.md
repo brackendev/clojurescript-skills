@@ -52,6 +52,8 @@ Parse a decimal string into minor units without floating point. `(* 100 (parse-d
 
 Clojure's `if` treats only `nil` and `false` as falsy on every host, including ClojureScript. The compiler inserts a runtime check on every `if` to preserve this semantic against JavaScript's wider falsy set (`0`, `""`, `NaN`, `null`, `undefined`). The `^boolean` type hint tells the compiler the expression is already a JS boolean and the check can be skipped. Reach for it on hot paths where the predicate always produces `true` or `false` (Iron Law CLJS-5). If a hinted expression returns `0` or `""`, the unchecked `if` takes the false branch, while Clojure semantics would take the true branch.
 
+JavaScript `undefined` behaves as `nil`: `(nil? js/undefined)` and `(= nil js/undefined)` are `true`, `(some? js/undefined)` is `false`, and `when-some` and `some->` stop on it. A missing JS property therefore reads as `nil` without a separate `undefined` check.
+
 ```clojure
 ;; good: the hint goes on the function name, as in cljs.core
 (defn ^boolean flagged? [user]
