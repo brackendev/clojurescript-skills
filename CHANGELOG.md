@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.1.28] - 2026-11-15
+
+### Added
+
+- `clojurescript` skill: the `references/simple-design.md` reference gives the ClojureScript constructs for Key Rule 20 of the `clojure` skill ("Choose simple over easy"). It covers reading an atom once for each callback and after each `await`, core.async channels and `#queue` as queues between components, the limit of 1024 pending puts that `put!` can reach, and protocols extended to JavaScript types. It warns that an `object` extension also matches keywords and maps that have no implementation of their own. Every example was compiled with ClojureScript 1.12.145 and run on Node.
+
 ## [0.1.27] - 2026-10-31
 
 ### Changed

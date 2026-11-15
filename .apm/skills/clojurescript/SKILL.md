@@ -58,6 +58,7 @@ The Iron Laws and Key Rules are the short form. Each reference file below holds 
 | Numbers, money, truthiness and `^boolean`, characters, atoms, or vars on a JavaScript host | `references/host-semantics.md` |
 | Writing or running `cljs.test` tests, including async tests | `references/testing.md` |
 | The `cljs.main` CLI, shadow-cljs, figwheel-main, builds, the `:advanced` release build, or the REPL | `references/project-workflows.md` |
+| Reading state across callbacks and `await`, putting a queue between components (a core.async channel, `#queue`), or extending a protocol to a JavaScript type | `references/simple-design.md` |
 
 ## Project Workflow
 
