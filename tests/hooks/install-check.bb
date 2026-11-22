@@ -2,10 +2,11 @@
 ;; at project scope and at user scope, and checks the deployed cljs-rules hook: the
 ;; launcher, the script, and the rules file are present and identical to the
 ;; source, the launcher is executable, and the deployed copy delivers the rules
-;; at session start in a matching project. It also checks that an install with
-;; every target succeeds at both scopes, gives Claude Code the SessionStart and
-;; PostToolUse events, writes no native Cursor hook, and gives Copilot no copy
-;; of the hook, which has been verified only on Claude Code.
+;; at session start in a matching project.
+;;
+;; An install that names every target must succeed at both scopes and write
+;; only for the package's targets: Claude Code and Codex get the hook, OpenCode
+;; gets the skills, and no other runtime gets a file.
 ;;
 ;; Usage: bb install-check.bb <package source directory>
 (require '[babashka.fs :as fs]
@@ -84,36 +85,54 @@
         (for [[event entries] (get (json/parse-string (slurp (str config-file))) "hooks")]
           [event (set (for [node (tree-seq coll? seq entries)
                             :when (map? node)
-                            :let [command (or (get node "command") (get node "bash"))]
+                            :let [command (get node "command")]
                             :when (string? command)]
                         (first (str/split (str (fs/file-name (str/replace command "\"" ""))) #"\s+"))))])))
 
-;; With every target, Cursor gets no native hook, and Copilot gets no copy of
-;; the hook.
+;; The package declares Claude Code, Codex, and OpenCode as its targets, so an
+;; install that names every target writes files only for those three. Claude
+;; Code and Codex get the hook, and OpenCode, which has no hooks, gets the skills.
 (def all-home (str (fs/path work "home-all")))
 (def all-project (str (fs/path work "proj-all")))
 (fs/create-dirs all-home)
 (fs/create-dirs all-project)
 (support/git all-project "init" "-q")
 
-(doseq [[label flags root] [["project, all targets" ["--target" "all"] all-project]
-                            ["user, all targets" ["-g" "--target" "all"] all-home]]
+;; The events that each runtime's hook configuration must register for each
+;; launcher. Codex has no PostToolUseFailure event.
+(def expected-hooks
+  [["Claude Code" [".claude" "settings.json"]
+    {"cljs-rules.sh" ["SessionStart" "PostToolUse"]}]
+   ["Codex" [".codex" "hooks.json"]
+    {"cljs-rules.sh" ["SessionStart" "PostToolUse"]}]])
+
+(def other-runtime-roots
+  [".cursor" ".github" ".copilot" ".gemini" ".kiro" ".windsurf" ".codeium" ".grok"])
+
+(defn files-under [dir]
+  (when (fs/exists? dir)
+    (filter fs/regular-file? (fs/glob dir "**" {:hidden true}))))
+
+(doseq [[label flags root opencode-skills]
+        [["project, all targets" ["--target" "all"] all-project (fs/path all-project ".agents" "skills")]
+         ["user, all targets" ["-g" "--target" "all"] all-home (fs/path all-home ".config" "opencode" "skills")]]
         :let [{:keys [exit log]} (apm-install all-project all-home flags)
-              claude-config (fs/path root ".claude" "settings.json")
-              cursor-config (fs/path root ".cursor" "hooks.json")
-              copilot-dir (if (= root all-project) (fs/path root ".github" "hooks") (fs/path root ".copilot" "hooks"))
               before (:fail @support/results)]]
   (support/check (zero? exit) (str label ": install failed (exit " exit ")"))
-  (support/check (and (fs/exists? claude-config)
-                      (every? #(contains? (get (hook-scripts claude-config) %) "cljs-rules.sh")
-                              ["SessionStart" "PostToolUse"]))
-                 (str label ": Claude Code settings do not register cljs-rules for SessionStart and PostToolUse"))
-  (support/check (or (not (fs/exists? cursor-config)) (every? empty? (vals (hook-scripts cursor-config))))
-                 (str label ": .cursor/hooks.json contains a native hook"))
-  (support/check (empty? (for [f (when (fs/exists? copilot-dir) (fs/glob copilot-dir "*.json"))
-                               :when (str/includes? (slurp (str f)) "cljs-rules.sh")]
-                           (str (fs/file-name f))))
-                 (str label ": Copilot received a hook file that runs cljs-rules"))
+  (doseq [[runtime config-path events-by-launcher] expected-hooks
+          [launcher events] events-by-launcher
+          :let [config (apply fs/path root config-path)]]
+    (support/check (and (fs/exists? config)
+                        (every? #(contains? (get (hook-scripts config) %) launcher) events))
+                   (str label ": " runtime " does not register " launcher " for " (str/join " and " events))))
+  (doseq [launcher (keys (last (second expected-hooks)))
+          :let [deployed (first (filter #(= launcher (fs/file-name %)) (files-under (fs/path root ".codex"))))]]
+    (support/check (and deployed (same-file? deployed (fs/path package-source ".apm/hooks/scripts" launcher)))
+                   (str label ": Codex did not receive " launcher " unchanged")))
+  (support/check (seq (files-under (fs/path opencode-skills "cljs-fix")))
+                 (str label ": OpenCode did not receive the cljs-fix skill"))
+  (support/check (empty? (mapcat #(files-under (fs/path root %)) other-runtime-roots))
+                 (str label ": the install wrote files for a runtime outside the package's targets"))
   (when (> (:fail @support/results) before)
     (println (str/replace log #"(?m)^" "    "))))
 

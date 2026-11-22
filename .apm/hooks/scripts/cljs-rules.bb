@@ -106,7 +106,7 @@
   "The directory that records deliveries for the session, or nil when the input
   has no session ID."
   [input]
-  (when-let [id (or (:session_id input) (:sessionId input))]
+  (when-let [id (:session_id input)]
     (let [dir (fs/path (fs/temp-dir) "clojure-family-rules" (str/replace id #"[^A-Za-z0-9_-]" "_"))]
       (fs/create-dirs dir)
       dir)))

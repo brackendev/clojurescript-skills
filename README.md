@@ -1,8 +1,8 @@
 # clojurescript-skills
 
-ClojureScript development skills packaged as an [APM](https://github.com/microsoft/apm) plugin. One install deploys the full set to every runtime in APM's default target set: Claude Code, Codex, OpenCode, Cursor, Copilot, Gemini, Windsurf, Kiro, and Grok Build. Antigravity is supported by naming it explicitly with `--target antigravity`.
+ClojureScript development skills packaged as an [APM](https://github.com/microsoft/apm) plugin. One install deploys the full set to Claude Code, Codex, and OpenCode.
 
-Skills follow the [Agent Skills](https://agentskills.io) open standard. One auto-triggers from conversation context (`clojurescript`). The rest appear as slash commands. The agent can also run `/cljs-fix` from a natural-language request. `/cljs-upgrade` runs only as a typed slash command. Runtimes differ in how they offer these commands: Codex lists them under `/skills` and runs them as `$name`, OpenCode attaches them with `@name`, and Gemini CLI does not read the user-only setting, so its agent can start any of them.
+Skills follow the [Agent Skills](https://agentskills.io) open standard. One auto-triggers from conversation context (`clojurescript`). The rest appear as slash commands. The agent can also run `/cljs-fix` from a natural-language request. `/cljs-upgrade` runs only as a typed slash command. Runtimes differ in how they offer these commands. Codex lists them under `/skills` and runs them as `$name`, and OpenCode attaches them with `@name`.
 
 This package layers on top of the host-neutral [clojure-skills](https://github.com/brackendev/clojure-skills) baseline. Install both together so the `clojure` skill handles general Clojure family style (naming, threading, collections, atoms, dispatch, formatting, namespaces, testing) and this package covers JavaScript interop, externs inference, macro stage separation, host-typed exceptions, JS-flavored numerics and truthiness, the `cljs.main` CLI workflow, and the production-build sanity checks that come with advanced compilation.
 
@@ -23,21 +23,21 @@ Eight sibling APM packages. This package layers on top of [clojure-skills](https
 
 ## Install
 
-Install [APM](https://github.com/microsoft/apm) 0.34.0 first. Homebrew offers only the newest release, so remove a Homebrew copy with `brew uninstall apm` and install from PyPI with [uv](https://docs.astral.sh/uv/getting-started/installation/): `uv tool install apm-cli==0.34.0`. APM 0.35.0 is not supported because it can delete installed skill files ([microsoft/apm#3372](https://github.com/microsoft/apm/issues/3372)). Then, in a project:
+Install [APM](https://github.com/microsoft/apm) 0.36.1 or later first. This package is tested with APM 0.36.1. APM 0.35.0 can delete installed skill files ([microsoft/apm#3372](https://github.com/microsoft/apm/issues/3372)), so upgrade from it before installing. Then, in a project:
 
 ```bash
-apm install brackendev/clojurescript-skills --target all
-apm install brackendev/clojure-skills --target all
+apm install brackendev/clojurescript-skills --target claude,codex,opencode
+apm install brackendev/clojure-skills --target claude,codex,opencode
 ```
 
 Globally for your user account:
 
 ```bash
-apm install brackendev/clojurescript-skills -g --target all
-apm install brackendev/clojure-skills -g --target all
+apm install brackendev/clojurescript-skills -g --target claude,codex,opencode
+apm install brackendev/clojure-skills -g --target claude,codex,opencode
 ```
 
-Update later with `apm update [-g]`. Remove with `apm uninstall brackendev/clojurescript-skills [-g]`. A local filesystem path can replace the shorthand at either scope.
+To install for fewer runtimes, name only those, for example `--target claude`. Update later with `apm update [-g]`. Remove with `apm uninstall brackendev/clojurescript-skills [-g]`. A local filesystem path can replace the shorthand at either scope.
 
 ## Requirements
 
@@ -98,7 +98,7 @@ The package includes one hook, `cljs-rules`.
 
 Agents seldom load an auto-triggered skill on their own, so this hook gives the agent the CLJS-1 through CLJS-5 Iron Laws of the `clojurescript` skill as text. In a project with `shadow-cljs.edn` or `figwheel-main.edn`, or a `deps.edn` or `project.clj` that names `org.clojure/clojurescript`, it puts the condensed laws into the agent's context when a session starts, and again after `/clear` or a compaction, with an instruction to load the `clojurescript` skill along with the `clojure` skill. When the session starts outside such a project, for example in a parent directory, the hook delivers the laws on the first edit of a `.cljs`, `.cljc`, or `.edn` file in a matching project instead, once per session. The hook never edits a file. Without Babashka it does nothing and prints a notice on standard error.
 
-The hook has been run only under Claude Code, where it registers `SessionStart` and `PostToolUse`. The package ships empty Copilot and Cursor hook files, so APM writes no Copilot hook and no native Cursor hook. APM also installs the generic copy for Codex, Gemini CLI, Kiro, and Windsurf, where its effect has not been tested. OpenCode and Grok Build have no hook support.
+The hook has been run only under Claude Code, where it registers `SessionStart` and `PostToolUse`. APM also installs the hook for Codex, where it has not been run in a live session. OpenCode has no hook support, so it receives the skills without the hook.
 
 ## Contributing
 

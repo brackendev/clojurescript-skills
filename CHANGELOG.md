@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.1.29] - 2026-11-22
+
+### Changed
+
+- The package supports Claude Code, Codex, and OpenCode, and `apm.yml` declares them as its targets. An install that names other targets, including `--target all`, writes files only for these three. Claude Code and Codex receive the `cljs-rules` hook. OpenCode has no hooks and receives the skills.
+- The Install section requires APM 0.36.1 or later and installs with `--target claude,codex,opencode`. It no longer requires APM 0.34.0 exactly.
+- `tests/hooks/install-check.bb` checks the Codex hook configuration, the OpenCode skills, and that an install with every target writes no file for another runtime.
+- `CONTRIBUTING.md` states what a plugin marker file does in a local install under APM 0.36.1: the package type stays `apm_package`.
+
+### Removed
+
+- The empty `copilot-hooks.json` and `cursor-hooks.json` hook files. APM 0.36.0 no longer routes a hook file to one runtime by its name, and it refuses to install a package that depends on that routing.
+- Cursor, Copilot, Gemini, Windsurf, Kiro, Grok Build, and Antigravity as supported runtimes.
+
 ## [0.1.28] - 2026-11-15
 
 ### Added
